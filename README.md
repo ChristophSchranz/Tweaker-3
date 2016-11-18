@@ -9,6 +9,9 @@ Author: Christoph Schranz, 12.01.2016
 
 `python Tweaker.py -i yourobject.stl -vb`
 
+## Converting a 3mf object to stl without tweaking:
+`python Tweaker.py -i yourobject.3mf -c`
+
 ## Find more options:
 `python FileHandler.py -h`
 
