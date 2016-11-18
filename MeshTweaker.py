@@ -2,43 +2,35 @@
 # Author: Christoph Schranz, Salzburg Research
 
 #import sys
-import math
 #import random
+import math
 from time import time, sleep
 from collections import Counter
 
 import numpy as np
-#from numpy.core.umath_tests import inner1d
 
 class Tweak:
     """ The Tweaker is an auto rotate class for 3D objects.
-    It requires following mesh format as input:
-     [[v1x,v1y,v1z],
-      [v2x,v2y,v2z],
-      .....
-      [vnx,vny,vnz]]
-    You can adjust this format in arrange_mesh(). For some applications,
-     it is necessary to replace "face[0], face[1]" by "-face[0], -face[1]".
 
     The critical angle CA is a variable that can be set by the operator as
     it may depend on multiple factors such as material used, printing
      temperature, printing speed, etc.
 
     Following attributes of the class are supported:
-    The tweaked z-axis' vector .z.
+    The tweaked z-axis'.
     Euler coords .v and .phi, where v is orthogonal to both z and z' and phi
      the angle between z and z' in rad.
-    The rotational matrix .R, the new mesh is created, by multiplying each
+    The rotational matrix .Matrix, the new mesh is created by multiplying each
      vector with R.
-    The vector of the new
     And the relative unprintability of the tweaked object. If this value is
-     greater than 15, a support structure is suggested.
+     greater than 10, a support structure is suggested.
         """
     def __init__(self, content, extended_mode=False, verbose=True, CA=45, n=[0,0,-1]):
         
         self.extended_mode = extended_mode
         initial_n = -np.array(n, dtype=np.float64)
         
+        ## Preprocess the input mesh format.
         t_start = time()
         mesh = self.preprocess(content)
         t_pre = time()
@@ -68,7 +60,7 @@ class Tweak:
             "Bottom:", "Overhang:", "Unprintability:"))
         
         
-        # Calculate the printability for each orientation
+        # Calculate the unprintability for each orientation
         for side in orientations:
             orientation = np.array([float("{:6f}".format(-i)) for i in side[0]])
             mesh = self.project_verteces(mesh, orientation)
@@ -111,17 +103,17 @@ Time-stats of algorithm:
 
 
     def target_function(self, bottom, overhang, contour):
-        '''This function returns the printability with the touching area and overhang given.'''
+        '''This function returns the uprintability for a given set of bottom area
+        overhang area and bottom contour lenght, based on an ordinal scale.'''
         ABSOLUTE = 100             # Some values for scaling the printability
         RELATIVE = 1
         CONTOUR = 1 + 0.5*contour
-        Unprintability = (overhang/ABSOLUTE) + (overhang / (CONTOUR+bottom) /RELATIVE)
+        Unprintability = (overhang/ABSOLUTE) + ((overhang + 1) / (CONTOUR+bottom) /RELATIVE)
         return Unprintability
         
         
     def preprocess(self, content):
-        '''The Tweaker needs the mesh format of the object with the normals of the facetts.'''
-        # creating a numpy mesh array TODO check float64
+        '''The Mesh format gets preprocessed for a better performance.'''
         mesh = np.array(content, dtype=np.float64)
         
         # prefix area vector, if not already done (e.g. in STL format)
@@ -157,7 +149,7 @@ Time-stats of algorithm:
 
 
     def project_verteces(self, mesh, orientation):
-        '''Returning the lowest value regarding vector n'''
+        '''Returning the "lowest" point vector regarding a vector n'''
         mesh[:,4,0] = np.inner(mesh[:,1,:], orientation)
         mesh[:,4,1] = np.inner(mesh[:,2,:], orientation)
         mesh[:,4,2] = np.inner(mesh[:,3,:], orientation)
@@ -169,7 +161,7 @@ Time-stats of algorithm:
         
         
     def lithograph(self, mesh, orientation, CA):
-        '''Calculating touching areas and overhangs regarding the vector n'''
+        '''Calculating bottom and overhang area for a mesh regarding the vector n'''
         overhang = 0
         bottom = 0
         ascent = -np.cos((90-CA)*np.pi/180)
@@ -215,13 +207,13 @@ Time-stats of algorithm:
 
             
         sleep(0)  # Yield, so other threads get a bit of breathing space.
-        print(bottom, overhang, contour)
         return bottom, overhang, contour
 
 
     def area_cumulation(self, mesh, n):
-        '''Searching best options out of the objects area vector field'''
-        if self.extended_mode: best_n = 7
+        '''Gathering the most auspicious alignments by cumulating the 
+        magnitude of parallel area vectors.'''
+        if self.extended_mode: best_n = 8
         else: best_n = 5
         orient = Counter()
         
@@ -234,9 +226,8 @@ Time-stats of algorithm:
         return [[[0.0,0.0,1.0], 0.0]] + [[list(el[0]), float("{:2f}".format(el[1]))] for el in top_n]
        
        
-    def egde_plus_vertex(self, mesh, best_n):
-        pass
-    # This algorithm is not implemented in numpy yet
+#    def egde_plus_vertex(self, mesh, best_n):
+#    # This algorithm is not implemented in numpy yet
 #        '''Searching normals or random edges with one vertice'''
 #        vcount = len(mesh)
 #        # Small files need more calculations
@@ -292,12 +283,12 @@ Time-stats of algorithm:
 
 
     def euler(self, bestside):
-        '''Calculating euler params and rotation matrix'''
+        '''Calculating euler rotation parameters and rotation matrix'''
         if (bestside[0] == np.array([0, 0, -1])).all():
             v = [1, 0, 0]
             phi = np.pi
         elif (bestside[0]==np.array([0, 0, 1])).all():
-            v = v[1,0,0]
+            v = [1,0,0]
             phi = 0
         else:
             phi = float("{:2f}".format(np.pi - np.arccos( -bestside[0][2] )))
