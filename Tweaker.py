@@ -70,7 +70,6 @@ if __name__ == "__main__":
         raise
         
     try:
-        print(args.inputfile)
         FileHandler = FileHandler.FileHandler()
         objs = FileHandler.loadMesh(args.inputfile)
         
@@ -88,12 +87,12 @@ if __name__ == "__main__":
     for obj in objs:
         mesh = obj["Mesh"]
         if args.convert:
-            R=[[1,0,0],[0,1,0],[0,0,1]]
+            Matrix=[[1,0,0],[0,1,0],[0,0,1]]
         else:
             try:
                 cstime = time()
                 x = Tweak(mesh, args.extended_mode, args.verbose, args.angle)
-
+                Matrix = x.Matrix
             except (KeyboardInterrupt, SystemExit):
                 print("\nError, tweaking process failed!")
                 raise
@@ -118,7 +117,7 @@ if __name__ == "__main__":
         ## Creating tweaked output file
         if os.path.splitext(args.outputfile)[1].lower() in ["stl", ".stl"]:
             # If you want to write in binary, use the function rotatebinSTL(...)"
-            tweakedcontent=FileHandler.rotateSTL(x.Matrix, mesh, args.inputfile)       
+            tweakedcontent=FileHandler.rotateSTL(Matrix, mesh, args.inputfile)       
             # Support structure suggestion can be used for further applications        
             #if x.Unprintability > 7:
             #    tweakedcontent+=" {supportstructure: yes}"
