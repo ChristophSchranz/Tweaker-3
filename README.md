@@ -12,5 +12,9 @@ Author: Christoph Schranz, 12.01.2016
 ## Find more options:
 `python FileHandler.py -h`
 
+## Not installed numpy yet?
+No Problem, the previous version 2 is completely numpy-less, but slower:
+[STL-tweaker-V2](https://github.com/iot-salzburg/STL-tweaker/)
+
 ## Cura Plugin:
 Download Nallath's [Cura-Orientation-Plugin](https://github.com/nallath/CuraOrientationPlugin), move the unzipped folder into Cura's PlugIn Folder and start using the Tweaker in Cura.
