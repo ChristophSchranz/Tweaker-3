@@ -25,39 +25,40 @@ class Tweak:
     And the relative unprintability of the tweaked object. If this value is
      greater than 10, a support structure is suggested.
         """
-    def __init__(self, content, extended_mode=False, verbose=True, CA=45, n=[0,0,-1]):
+    def __init__(self, content, extended_mode=False, verbose=True, CA=45, def_z=[0,0,1]):
         
         self.extended_mode = extended_mode
-        initial_n = -np.array(n, dtype=np.float64)
+        n = -np.array(def_z, dtype=np.float64)
+        orientations = [[list(n), 0.0]]
         
         ## Preprocess the input mesh format.
         t_start = time()
         mesh = self.preprocess(content)
         t_pre = time()
         
-
         ## Calculating initial parameters
+        initial_n = -np.array(n, dtype=np.float64)
         bottom, overhang, contour = self.lithograph(mesh, initial_n, CA)
         t_ini = time() 
         
         # The initial alignment gets a bonus of 0.05, to neglect rounding errors
-        results = np.array([initial_n, bottom, 
-                    overhang, self.target_function(bottom, overhang, contour) - 0.05])
+        results = np.array([initial_n, bottom, overhang, contour, 
+                self.target_function(bottom, overhang, contour) - 0.05])
           
         ## Searching promising orientations: 
-        orientations = self.area_cumulation(mesh, n)
+        orientations += self.area_cumulation(mesh, n)
         t_areacum = time()
-#        if extended_mode: # This part is not implemented yet
-#            dialg_time = time()
-#            orientations += self.egde_plus_vertex(mesh, 12)
-#            orientations = self.remove_duplicates(orientations)
-#            dialg_time = time() - dialg_time
+        if extended_mode: # TODO This part is not implemented yet
+            dialg_time = time()
+            orientations += self.death_star(mesh, 12)
+            orientations = self.remove_duplicates(orientations)
+            dialg_time = time() - dialg_time
             
         t_ds = time()
         if verbose:
             print("Examine {} orientations:".format(len(orientations)))
-            print("  %-32s %-10s%-10s%-10s " %("Alignment:", 
-            "Bottom:", "Overhang:", "Unprintability:"))
+            print("  %-32s %-10s%-10s%-10s%-10s " %("Alignment:", 
+            "Bottom:", "Overhang:", "Contour:", "Unpr.:"))
         
         
         # Calculate the unprintability for each orientation
@@ -67,14 +68,14 @@ class Tweak:
             bottom, overhang, contour = self.lithograph(mesh, orientation, CA)
             Unprintability = self.target_function(bottom, overhang, contour)
             results = np.vstack((results, [orientation, bottom,
-                            overhang, Unprintability]))                        
+                            overhang, contour, Unprintability]))                        
             if verbose:
-                print("  %-32s %-10s%-10s%-10s " %(str(orientation), 
-                round(bottom, 3),round(overhang,3), round(Unprintability,3)))
+                print("  %-32s %-10s%-10s%-10s%-10s " %(str(orientation), 
+                round(bottom, 3), round(overhang,3), round(contour,3), round(Unprintability,3)))
         t_lit = time()               
                
         # Best alignment
-        best_alignment = results[np.argmin(results[:, 3])]
+        best_alignment = results[np.argmin(results[:, 4])]
             
            
         if verbose:
@@ -97,7 +98,8 @@ Time-stats of algorithm:
             self.Alignment=best_alignment[0]
             self.BottomArea = best_alignment[1]
             self.Overhang = best_alignment[2]
-            self.Unprintability = best_alignment[3]
+            self.Contour = best_alignment[3]
+            self.Unprintability = best_alignment[4]
             
         return None
 
@@ -149,7 +151,8 @@ Time-stats of algorithm:
 
 
     def project_verteces(self, mesh, orientation):
-        '''Returning the "lowest" point vector regarding a vector n'''
+        '''Returning the "lowest" point vector regarding a vector n for
+        each vertex.'''
         mesh[:,4,0] = np.inner(mesh[:,1,:], orientation)
         mesh[:,4,1] = np.inner(mesh[:,2,:], orientation)
         mesh[:,4,2] = np.inner(mesh[:,3,:], orientation)
@@ -161,19 +164,22 @@ Time-stats of algorithm:
         
         
     def lithograph(self, mesh, orientation, CA):
-        '''Calculating bottom and overhang area for a mesh regarding the vector n'''
+        '''Calculating bottom and overhang area for a mesh regarding 
+        the vector n.'''
         overhang = 0
         bottom = 0
         ascent = -np.cos((90-CA)*np.pi/180)
         anti_orient = -np.array(orientation)
-        
-        # remove small facets
-        mesh = np.array([face for face in mesh if face[5,0] >= 2])
 
-        # filter bottom area
         total_min = np.amin(mesh[:,4,:])
+        
+        # remove small facets (these are essential for countour calculation)
+        if not self.extended_mode:
+            mesh = np.array([face for face in mesh if face[5,0] >= 2])
+
+        # filter bottom area        
         bottoms = np.array([face for face in mesh
-                if face[5,1] < total_min + 0.15])
+                if face[5,1] < total_min + 0.01])
         if len(bottoms) > 0:
             bottom = np.sum(bottoms[:,5,0]) 
         else: bottom = 0
@@ -182,7 +188,7 @@ Time-stats of algorithm:
         overhangs = np.array([face for face in mesh 
                     if np.inner(face[0], orientation) < ascent])
         overhangs = np.array([face for face in overhangs
-                    if face[5,1] > total_min + 0.15])
+                    if face[5,1] > total_min + 0.01])
         plafonds = np.array([face for face in overhangs
                     if (face[0,:]==anti_orient).all()])
         if len(plafonds) > 0:
@@ -195,17 +201,21 @@ Time-stats of algorithm:
         # filter the total length of the bottom area's contour
         if self.extended_mode:
             contours = np.array([face for face in mesh
-                    if face[5,2] < total_min + 0.15 < face[5,1]])
+            if face[5,2] < total_min + 0.01 < face[5,1] ])
+            #print("contour count:", str(len(contours)))
+            
             if len(contours) > 0:
+                #print(contours[:,4,:])
                 con = np.array([np.subtract(face[1 + np.argsort(face[4,:])[0],:],
                                             face[1 + np.argsort(face[4,:])[1],:])
                                             for face in contours])
                 contours = np.sum(np.abs(con)**2, axis=-1)**0.5
                 contour = np.sum(contours)     
+            else: # if no contour facets were found, set it > 0 (div by 0)
+                contour = 0.1
         else: # considering the bottom area as square, bottom=a**2 ^ contour=4*a
             contour = 4*np.sqrt(bottom)
-
-            
+        
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return bottom, overhang, contour
 
@@ -223,62 +233,63 @@ Time-stats of algorithm:
 
         top_n = orient.most_common(best_n)
         sleep(0)  # Yield, so other threads get a bit of breathing space.
-        return [[[0.0,0.0,1.0], 0.0]] + [[list(el[0]), float("{:2f}".format(el[1]))] for el in top_n]
+        return [[list(el[0]), float("{:2f}".format(el[1]))] for el in top_n]
        
        
-#    def egde_plus_vertex(self, mesh, best_n):
-#    # This algorithm is not implemented in numpy yet
-#        '''Searching normals or random edges with one vertice'''
-#        vcount = len(mesh)
-#        # Small files need more calculations
-#        if vcount < 10000: it = 5
-#        elif vcount < 25000: it = 2
-#        else: it = 1           
-#        self.mesh = mesh
-#        lst = map(self.calc_random_normal, list(range(vcount))*it)
-#        lst = filter(lambda x: x is not None, lst)
-#        
-#        sleep(0)  # Yield, so other threads get a bit of breathing space.
-#        orient = Counter(lst)
-#        
-#        top_n = orient.most_common(best_n)
-#        top_n = filter(lambda x: x[1]>2, top_n)
-#
-#        return [[list(el[0]), el[1]] for el in top_n]
-#
-#    def calc_random_normal(self, i):
-#        if i%3 == 0:
-#            v = self.mesh[i]
-#            w = self.mesh[i+1]
-#        elif i%3 == 1:
-#            v = self.mesh[i]
-#            w = self.mesh[i+1]
-#        else:
-#            v = self.mesh[i]
-#            w = self.mesh[i-2]
-#        r_v = random.choice(self.mesh)
-#        v = [v[0]-r_v[0], v[1]-r_v[1], v[2]-r_v[2]]
-#        w = [w[0]-r_v[0], w[1]-r_v[1], w[2]-r_v[2]]
-#        a=[v[1]*w[2]-v[2]*w[1],v[2]*w[0]-v[0]*w[2],v[0]*w[1]-v[1]*w[0]]
-#        n = math.sqrt(a[0]*a[0] + a[1]*a[1] + a[2]*a[2])
-#        if n != 0:
-#            return tuple([round(d/n, 6) for d in a])
-#
-#
-#    def remove_duplicates(self, o):
-#        '''Removing duplicates in orientation'''
-#        orientations = list()
-#        for i in o:
-#            duplicate = None
-#            for j in orientations:
-#                sleep(0)  # Yield, so other threads get a bit of breathing space.
-#                dif = math.sqrt( (i[0][0]-j[0][0])**2 + (i[0][1]-j[0][1])**2 + (i[0][2]-j[0][2])**2 )
-#                if dif < 0.001:
-#                    duplicate = True
-#                    break
-#            if duplicate is None:
-#                orientations.append(i)
-#        return orientations
+    def death_star(self, mesh, best_n):
+        '''Searching normals or random edges with one vertice'''
+        vcount = len(mesh)
+        
+        # Small files need more calculations
+        if vcount < 1000: it = 30
+        elif vcount < 2000: it = 15
+        elif vcount < 5000: it = 5
+        elif vcount < 10000: it = 3
+        elif vcount < 20000: it = 2
+        else: it = 1     
+        
+        vertexes = mesh[:vcount,1:4,:]
+        v0u1 = vertexes[:,np.random.choice(3, 2, replace=False)]
+        v0 = v0u1[:,0,:]
+        v1 = v0u1[:,1,:]
+        v2 = vertexes[:,np.random.choice(3, 1, replace=False)].reshape(vcount, 3)
+        
+        lst = list()
+        for i in range(it):
+            v2 = v2[np.random.choice(vcount, vcount),:]
+            normals = np.cross( np.subtract(v2,v0), np.subtract(v1,v0))
+
+            # normalise area vector
+            area_size = np.sum(np.abs(normals)**2, axis=-1)**0.5
+            normals = np.around(normals/area_size.reshape(vcount,1), decimals=6)
+    
+            lst += [tuple(face) for face in normals if np.isreal(face[0])]
+            sleep(0)  # Yield, so other threads get a bit of breathing space.
+        
+        orient = Counter(lst)
+        top_n = orient.most_common(best_n)
+        top_n = list(filter(lambda x: x[1]>2, top_n))
+        
+        # add antiparallel orientations
+        top_n += [[[-v[0][0], -v[0][1], -v[0][2] ], v[1]] 
+                                                    for v in top_n]
+        return [[list(el[0]), el[1]] for el in top_n]
+
+
+    def remove_duplicates(self, o):
+        '''Removing duplicates in orientation'''
+        orientations = list()
+        for i in o:
+            duplicate = None
+            for j in orientations:
+                sleep(0)  # Yield, so other threads get a bit of breathing space.
+                dif = math.sqrt( (i[0][0]-j[0][0])**2 + (i[0][1]-j[0][1])**2 + (i[0][2]-j[0][2])**2 )
+                if dif < 0.001:
+                    duplicate = True
+                    break
+            if duplicate is None:
+                orientations.append(i)
+        return orientations
 
 
 

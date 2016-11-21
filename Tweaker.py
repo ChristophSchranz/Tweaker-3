@@ -34,12 +34,13 @@ def getargs():
     args = parser.parse_args()
 
     if args.version:
-        print("Tweaker 0.3.2, (18 November 2016)")
+        print("Tweaker 0.3.3, (21 November 2016)")
         return None        
     if not args.inputfile:
         try:
             curpath = os.path.dirname(os.path.realpath(__file__))
             args.inputfile=curpath + os.sep + "demo_object.stl"
+            #args.inputfile=curpath + os.sep + "death_star.stl"
             #args.inputfile=curpath + os.sep + "pyramid.3mf"
             
         except:

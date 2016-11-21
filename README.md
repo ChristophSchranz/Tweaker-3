@@ -9,15 +9,27 @@ Author: Christoph Schranz, 12.01.2016
 
 `python Tweaker.py -i yourobject.stl -vb`
 
+
+## Extended mode:
+
+This mode is more reliable, but time consuming
+
+`python Tweaker.py -i yourobject.stl -vb -x`
+
 ## Converting a 3mf object to stl without tweaking:
+
 `python Tweaker.py -i yourobject.3mf -c`
 
 ## Find more options:
+
 `python FileHandler.py -h`
 
 ## Not installed numpy yet?
-No Problem, the previous version 2 is completely numpy-less, but slower:
+
+No Problem, the previous version 2 is completely numpy-less (but slower):
+
 [STL-tweaker-V2](https://github.com/iot-salzburg/STL-tweaker/)
 
 ## Cura Plugin:
-Download Nallath's [Cura-Orientation-Plugin](https://github.com/nallath/CuraOrientationPlugin), move the unzipped folder into Cura's PlugIn Folder and start using the Tweaker in Cura.
+
+PlugIn for both Cura 15 and Cura 2.3 are supported. Infos are in the descriptions.
