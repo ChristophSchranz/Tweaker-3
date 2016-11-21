@@ -146,6 +146,10 @@ Time-stats of algorithm:
         addendum[:,1,2] = np.median(mesh[:,1:4,2], axis=1)
         mesh = np.hstack((mesh, addendum))
 
+        # remove small facets (these are essential for countour calculation)
+        if not self.extended_mode:
+            mesh = np.array([face for face in mesh if face[5,0] >= 1])
+            
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return mesh
 
@@ -172,10 +176,6 @@ Time-stats of algorithm:
         anti_orient = -np.array(orientation)
 
         total_min = np.amin(mesh[:,4,:])
-        
-        # remove small facets (these are essential for countour calculation)
-        if not self.extended_mode:
-            mesh = np.array([face for face in mesh if face[5,0] >= 2])
 
         # filter bottom area        
         bottoms = np.array([face for face in mesh
