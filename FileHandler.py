@@ -4,7 +4,7 @@
 import sys, os
 import struct, time
 import ThreeMF
-
+import numpy as np
 
 class FileHandler():
     def __init__(self):
@@ -65,37 +65,28 @@ class FileHandler():
                   
     def rotateSTL(self, R, content, filename):
         '''Rotate the object and save as ascii STL.'''
-        face=[]
-        mesh=[]
-        i=0
-
-        rotated_content=list(map(self.rotate_vert, content, [R]*len(content)))
+        mesh = np.array(content, dtype=np.float64)
         
-        for li in rotated_content:      
-            face.append(li)
-            i+=1
-            if i%3==0:
-                mesh.append([face[0],face[1],face[2]])
-                face=[]
+        # prefix area vector, if not already done (e.g. in STL format)
+        if len(mesh[0]) == 3:
+            row_number = int(len(content)/3)
+            mesh = mesh.reshape(row_number,3,3)
 
-        mesh = map(self.calc_nomal, mesh)
+        rotated_content = np.matmul(mesh, R)
+
+        v0=rotated_content[:,0,:]
+        v1=rotated_content[:,1,:]
+        v2=rotated_content[:,2,:]
+        normals = np.cross( np.subtract(v1,v0), np.subtract(v2,v0)
+                                ).reshape(int(len(rotated_content)),1,3)
+        rotated_content = np.hstack((normals,rotated_content))
 
         tweaked = list("solid %s" % filename)
-        tweaked += list(map(self.write_facett, mesh))
+        tweaked += list(map(self.write_facett, list(rotated_content)))
         tweaked.append("\nendsolid %s\n" % filename)
         tweaked = "".join(tweaked)
         
         return tweaked
-
-    def rotate_vert(self, a, R):
-        return [a[0]*R[0][0]+a[1]*R[1][0]+a[2]*R[2][0],
-                              a[0]*R[0][1]+a[1]*R[1][1]+a[2]*R[2][1],
-                              a[0]*R[0][2]+a[1]*R[1][2]+a[2]*R[2][2]]
-    def calc_nomal(self, face):
-        v=[face[1][0]-face[0][0],face[1][1]-face[0][1],face[1][2]-face[0][2]]
-        w=[face[2][0]-face[0][0],face[2][1]-face[0][1],face[2][2]-face[0][2]]
-        a=[v[1]*w[2]-v[2]*w[1],v[2]*w[0]-v[0]*w[2],v[0]*w[1]-v[1]*w[0]]        
-        return [[a[0],a[1],a[2]],face[0],face[1],face[2]]
     
     def write_facett(self, facett):
         return"""\nfacet normal %f %f %f
@@ -104,9 +95,9 @@ class FileHandler():
         vertex %f %f %f
         vertex %f %f %f
     endloop
-endfacet""" % (facett[0][0], facett[0][1], facett[0][2], facett[1][0], 
-               facett[1][1], facett[1][2], facett[2][0], facett[2][1], 
-                facett[2][2], facett[3][0], facett[3][1], facett[3][2])
+endfacet""" % (facett[0,0], facett[0,1], facett[0,2], facett[1,0], 
+               facett[1,1], facett[1,2], facett[2,0], facett[2,1], 
+                facett[2,2], facett[3,0], facett[3,1], facett[3,2])
 
     def rotatebinSTL(self, R, content, filename):
         '''Rotate the object and save as binary STL. This module is currently replaced
