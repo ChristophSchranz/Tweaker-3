@@ -6,6 +6,7 @@
 import math
 from time import time, sleep
 from collections import Counter
+# upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
 
 # Constants used:
@@ -236,7 +237,9 @@ Time-stats of algorithm:
         for i in o:
             duplicate = None
             for j in orientations:
-                if np.allclose(i, j, atol = VECTOR_TOL):
+                dif = math.sqrt( (i[0][0]-j[0][0])**2 + (i[0][1]-j[0][1])**2 
+                            + (i[0][2]-j[0][2])**2 )
+                if dif < 0.001:
                     duplicate = True
                     break
             if duplicate is None:

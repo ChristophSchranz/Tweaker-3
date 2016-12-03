@@ -9,6 +9,10 @@ Author: Christoph Schranz, 12.01.2016
 
 `python Tweaker.py -i yourobject.stl -vb`
 
+Make shure you've installed the latest version of numpy:
+
+`pip install numpy --upgrade`
+
 
 ## Extended mode:
 

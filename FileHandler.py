@@ -4,6 +4,7 @@
 import sys, os
 import struct, time
 import ThreeMF
+# upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
 
 class FileHandler():
@@ -71,7 +72,8 @@ class FileHandler():
         if len(mesh[0]) == 3:
             row_number = int(len(content)/3)
             mesh = mesh.reshape(row_number,3,3)
-
+        
+        # upgrade numpy with: "pip install numpy --upgrade"
         rotated_content = np.matmul(mesh, R)
 
         v0=rotated_content[:,0,:]
