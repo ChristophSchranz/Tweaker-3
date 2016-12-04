@@ -180,7 +180,7 @@ Time-stats of algorithm:
         '''Gathering the most auspicious alignments by cumulating the 
         magnitude of parallel area vectors.'''
         if self.extended_mode: best_n = 8
-        else: best_n = 5
+        else: best_n = 6
         orient = Counter()
         
         align = mesh[:,0,:]
@@ -216,10 +216,16 @@ Time-stats of algorithm:
             normals = np.cross( np.subtract(v2,v0), np.subtract(v1,v0))
 
             # normalise area vector
-            area_size = np.sum(np.abs(normals)**2, axis=-1)**0.5
-            normals = np.around(normals/area_size.reshape(vcount,1),decimals=6)
-    
-            lst += [tuple(face) for face in normals if np.isreal(face[0])]
+            area_size = (np.sum(np.abs(normals)**2, axis=-1)**0.5).reshape(vcount,1)
+            normalset = np.hstack((normals, area_size))
+            
+            # TODO: Fix the traceback
+            normalset = np.array([nset for nset in normalset 
+                if np.isreal(nset[-1]) and np.nonzero(nset[3])])
+                    
+            normals = np.around(normalset[0:3]/normalset[3], decimals=6)
+
+            lst += [tuple(face) for face in normals]
             sleep(0)  # Yield, so other threads get a bit of breathing space.
         
         orient = Counter(lst)
