@@ -195,7 +195,6 @@ Time-stats of algorithm:
     def death_star(self, mesh, best_n):
         '''Searching normals or random edges with one vertice'''
         vcount = len(mesh)
-        
         # Small files need more calculations
         if vcount < 1000: it = 30
         elif vcount < 2000: it = 15
@@ -217,13 +216,12 @@ Time-stats of algorithm:
 
             # normalise area vector
             area_size = (np.sum(np.abs(normals)**2, axis=-1)**0.5).reshape(vcount,1)
-            normalset = np.hstack((normals, area_size))
+            nset = np.hstack((normals, area_size))
             
-            # TODO: Fix the traceback
-            normalset = np.array([nset for nset in normalset 
-                if np.isreal(nset[-1]) and np.nonzero(nset[3])])
-                    
-            normals = np.around(normalset[0:3]/normalset[3], decimals=6)
+            nset = np.array([n for n in nset if n[3]!=0])  
+
+            normals = np.around(nset[:,0:3]/nset[:,3].reshape(len(nset),1), 
+                                decimals=6)
 
             lst += [tuple(face) for face in normals]
             sleep(0)  # Yield, so other threads get a bit of breathing space.
