@@ -332,7 +332,7 @@ Time-stats of algorithm:
             v = [-bestside[0][1] , bestside[0][0], 0]
             v = [i / np.sum(np.abs(v)**2, axis=-1)**0.5 for i in v]
             v = np.array([float("{:2f}".format(i)) for i in v])
-
+            
         R = [[v[0] * v[0] * (1 - math.cos(phi)) + math.cos(phi),
               v[0] * v[1] * (1 - math.cos(phi)) - v[2] * math.sin(phi),
               v[0] * v[2] * (1 - math.cos(phi)) + v[1] * math.sin(phi)],
