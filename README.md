@@ -7,7 +7,7 @@ Author: Christoph Schranz, 12.01.2016
 
 ## Quickstart:  
 
-`python Tweaker.py -i yourobject.stl -vb`
+`python Tweaker.py -i demo_object.stl -vb`
 
 Make shure you've installed the latest version of numpy:
 
@@ -18,11 +18,11 @@ Make shure you've installed the latest version of numpy:
 
 This mode is more reliable, but time consuming
 
-`python Tweaker.py -i yourobject.stl -vb -x`
+`python Tweaker.py -i death_star.stl -vb -x`
 
 ## Converting a 3mf object to stl without tweaking:
 
-`python Tweaker.py -i yourobject.3mf -c`
+`python Tweaker.py -i pyramid.3mf -c`
 
 ## Find more options:
 
