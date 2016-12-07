@@ -52,15 +52,6 @@ class Tweak:
         mesh = self.preprocess(content)
         t_pre = time()
         
-        ## Calculating initial parameters
-        initial_n = -np.array(n, dtype=np.float64)
-        bottom, overhang, contour = self.lithograph(mesh, initial_n, CA)
-        t_ini = time() 
-        
-        # The initial alignment gets a small bonus, to neglect rounding errors
-        results = np.array([initial_n, bottom, overhang, contour, 
-                self.target_function(bottom, overhang, contour) - 0.001])
-          
         ## Searching promising orientations: 
         orientations += self.area_cumulation(mesh, n)
         t_areacum = time()
@@ -78,6 +69,7 @@ class Tweak:
         
         
         # Calculate the unprintability for each orientation
+        results = np.array([None,None,None,None,np.inf])
         for side in orientations:
             orientation =np.array([float("{:6f}".format(-i)) for i in side[0]])
             mesh = self.project_verteces(mesh, orientation)
@@ -100,12 +92,11 @@ class Tweak:
             print("""
 Time-stats of algorithm:
   Preprocessing:    \t{pre:2f} s
-  Initial Side:     \t{ini:2f} s
   Area Cumulation:  \t{ac:2f} s
   Death Star:       \t{ds:2f} s
   Lithography Time:  \t{lt:2f} s  
   Total Time:        \t{tot:2f} s
-""".format(pre=t_pre-t_start, ini=t_ini-t_pre, ac=t_areacum-t_ini, 
+""".format(pre=t_pre-t_start, ac=t_areacum-t_pre, 
            ds=t_ds-t_areacum, lt=t_lit-t_ds, tot=t_lit-t_start))  
            
         if len(best_alignment) > 0:
@@ -126,7 +117,7 @@ Time-stats of algorithm:
         '''This function returns the Unprintability for a given set of bottom
         overhang area and bottom contour lenght, based on an ordinal scale.'''
         Unprintability =( overhang/ABSOLUTE_F
-                + overhang / (1 + CONTOUR_F*contour + bottom) /RELATIVE_F)
+                + (overhang + 1) / (1 + CONTOUR_F*contour + bottom) /RELATIVE_F)
                 
         return np.around(Unprintability, 6)
         
@@ -219,7 +210,9 @@ Time-stats of algorithm:
             nset = np.hstack((normals, area_size))
             
             nset = np.array([n for n in nset if n[3]!=0])  
-
+            if nset.size == 0:
+                continue
+            
             normals = np.around(nset[:,0:3]/nset[:,3].reshape(len(nset),1), 
                                 decimals=6)
 
