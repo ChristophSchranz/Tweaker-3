@@ -139,7 +139,7 @@ Time-stats of algorithm:
         
         face_count = len(mesh)
         
-        # calc area size and normalise area vector
+        # calc area size and normalise area vector, if size=0 a rt-error occurs
         area_size = np.sum(np.abs(mesh[:,0,:])**2, axis=-1)**0.5
         mesh[:,0,:] = mesh[:,0,:]/area_size.reshape(face_count, 1)
         area_size = area_size/2

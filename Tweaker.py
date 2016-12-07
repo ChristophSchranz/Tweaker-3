@@ -1,5 +1,5 @@
-# Python 2.7 and 3.5
-# Author: Christoph Schranz, Salzburg Research
+## Author: Christoph Schranz, Salzburg Research, 2015/16
+## Contact: christoph.schranz@salzburgresearch.at
 
 ## You can preset the default model in line 42
 
