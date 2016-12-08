@@ -21,9 +21,6 @@ def getargs():
                         help="select output file. '_tweaked' is postfix by default")
     parser.add_argument('-c', '--convert', action="store_true",dest="convert", 
                         help="convert 3mf to stl without tweaking", default=False)
-    parser.add_argument('-a', '--angle', action="store", dest="angle", type=int,
-                        default=45,
-                        help="specify critical angle for overhang demarcation in degrees")
     parser.add_argument('-x', '--extended', action="store_true", dest="extended_mode", default=False,
                         help="using more algorithms and examine more alignments")
     parser.add_argument('-v', '--version', action="store_true", dest="version",
@@ -34,7 +31,7 @@ def getargs():
     args = parser.parse_args()
 
     if args.version:
-        print("Tweaker 0.3.3, (21 November 2016)")
+        print("Tweaker 0.3.4, (8 Dezember 2016)")
         return None        
     if not args.inputfile:
         try:
@@ -92,12 +89,11 @@ if __name__ == "__main__":
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.angle)
+                x = Tweak(mesh, args.extended_mode, args.verbose)
                 Matrix = x.Matrix
             except (KeyboardInterrupt, SystemExit):
                 print("\nError, tweaking process failed!")
                 raise
-                
             ## List tweaking results
             if args.result or args.verbose:
                 print("\nResult-stats:")

@@ -40,7 +40,7 @@ class Tweak:
     And the relative unprintability of the tweaked object. If this value is
      greater than 10, a support structure is suggested.
         """
-    def __init__(self, content, extended_mode=False, verbose=True, CA=45, 
+    def __init__(self, content, extended_mode=False, verbose=True, 
                  def_z=[0,0,1]):
 
         self.extended_mode = extended_mode
@@ -54,26 +54,28 @@ class Tweak:
         
         ## Searching promising orientations: 
         orientations += self.area_cumulation(mesh, n)
+
         t_areacum = time()
         if extended_mode:
             dialg_time = time()
-            orientations += self.death_star(mesh, 12)
-            orientations = self.remove_duplicates(orientations)
-            dialg_time = time() - dialg_time
+            orientations += self.death_star(mesh, 8)
+            dialg_time = time() - dialg_time   
             
         t_ds = time()
+        
+        orientations = self.remove_duplicates(orientations)
+        
         if verbose:
             print("Examine {} orientations:".format(len(orientations)))
             print("  %-26s %-10s%-10s%-10s%-10s " %("Alignment:", 
             "Bottom:", "Overhang:", "Contour:", "Unpr.:"))
-        
         
         # Calculate the unprintability for each orientation
         results = np.array([None,None,None,None,np.inf])
         for side in orientations:
             orientation =np.array([float("{:6f}".format(-i)) for i in side[0]])
             mesh = self.project_verteces(mesh, orientation)
-            bottom, overhang, contour = self.lithograph(mesh, orientation, CA)
+            bottom, overhang, contour = self.lithograph(mesh, orientation)
             Unprintability = self.target_function(bottom, overhang, contour)
             results = np.vstack((results, [orientation, bottom,
                             overhang, contour, Unprintability]))                        
@@ -139,27 +141,29 @@ Time-stats of algorithm:
         
         face_count = len(mesh)
         
-        # calc area size and normalise area vector, if size=0 a rt-error occurs
-        area_size = np.sum(np.abs(mesh[:,0,:])**2, axis=-1)**0.5
-        mesh[:,0,:] = mesh[:,0,:]/area_size.reshape(face_count, 1)
-        area_size = area_size/2
-
         # append columns with a_min, area_size
         addendum = np.zeros((face_count, 2, 3))
         addendum[:,0,0] = mesh[:,1,2]
         addendum[:,0,1] = mesh[:,2,2]
         addendum[:,0,2] = mesh[:,3,2]
         
-        addendum[:,1,0] = area_size.reshape(face_count)
+        # calc area size
+        addendum[:,1,0] = (np.sum(np.abs(mesh[:,0,:])**2, axis=-1)**0.5).reshape(face_count)
         addendum[:,1,1] = np.max(mesh[:,1:4,2], axis=1)
         addendum[:,1,2] = np.median(mesh[:,1:4,2], axis=1)
         mesh = np.hstack((mesh, addendum))
+        
+        # filter faces without area
+        mesh[mesh[:,5,0]!=0]
 
+        # normalise area vector and correct area size
+        mesh[:,0,:] = mesh[:,0,:]/mesh[:,5,0].reshape(face_count, 1)
+        mesh[:,5,0] = mesh[:,5,0]/2
+        
         # remove small facets (these are essential for countour calculation)
         if not self.extended_mode: ## TODO remove facets smaller than a 
                                 #relative proportion of the total dimension
-            filtered_mesh = np.array([face for face in mesh 
-                        if face[5,0] > NEGL_FACE_SIZE])
+            filtered_mesh = mesh[mesh[:,5,0] > NEGL_FACE_SIZE]
             if len(filtered_mesh) > 100:
                 mesh = filtered_mesh
             
@@ -170,8 +174,8 @@ Time-stats of algorithm:
     def area_cumulation(self, mesh, n):
         '''Gathering the most auspicious alignments by cumulating the 
         magnitude of parallel area vectors.'''
-        if self.extended_mode: best_n = 8
-        else: best_n = 6
+        if self.extended_mode: best_n = 10
+        else: best_n = 7
         orient = Counter()
         
         align = mesh[:,0,:]
@@ -224,8 +228,10 @@ Time-stats of algorithm:
         top_n = list(filter(lambda x: x[1] > 2, top_n))
         
         # add antiparallel orientations
-        top_n += [[[-v[0][0], -v[0][1], -v[0][2] ], v[1]] for v in top_n]
-        return [[list(el[0]), el[1]] for el in top_n]
+        top_n = [[list(v[0]),v[1]] for v in top_n]
+        top_n += [[list((-v[0][0], -v[0][1], -v[0][2] )), v[1]] 
+                        for v in top_n]
+        return top_n
 
 
     def remove_duplicates(self, o):
@@ -234,9 +240,7 @@ Time-stats of algorithm:
         for i in o:
             duplicate = None
             for j in orientations:
-                dif = math.sqrt( (i[0][0]-j[0][0])**2 + (i[0][1]-j[0][1])**2 
-                            + (i[0][2]-j[0][2])**2 )
-                if dif < 0.001:
+                if np.allclose(i[0],j[0], atol = 0.0001):
                     duplicate = True
                     break
             if duplicate is None:
@@ -257,14 +261,14 @@ Time-stats of algorithm:
         return mesh
         
         
-    def lithograph(self, mesh, orientation, CA):
+    def lithograph(self, mesh, orientation):
         '''Calculating bottom and overhang area for a mesh regarding 
         the vector n.'''
         overhang = 0
         bottom = 0
-        ascent = -np.cos((90-CA)*np.pi/180)
+        
+        ascent = np.cos((120)*np.pi/180)
         anti_orient = -np.array(orientation)
-
         total_min = np.amin(mesh[:,4,:])
 
         # filter bottom area        
@@ -275,36 +279,42 @@ Time-stats of algorithm:
         else: bottom = 0
         
         # filter overhangs
-        overhangs = np.array([face for face in mesh 
-                    if np.inner(face[0], orientation) < ascent])
-        overhangs = np.array([face for face in overhangs
-                    if face[5,1] > total_min + FIRST_LAY_H])
+        overhangs = mesh[np.inner(mesh[:,0,:], orientation) < ascent]
+        overhangs = overhangs[overhangs[:,5,1] > (total_min + FIRST_LAY_H)]
+                    
         if self.extended_mode:
-            plafonds = np.array([face for face in overhangs
-                        if (face[0,:]==anti_orient).all()])
+            plafonds = overhangs[(overhangs[:,0,:]==anti_orient).all(axis=1)]
             if len(plafonds) > 0:
                 plafond = np.sum(plafonds[:,5,0]) 
             else: plafond = 0
         else: plafond = 0
-        if len(overhangs) > 0:  
-            overhang = np.sum(overhangs[:,5,0]) - PLAFOND_ADV * plafond  
+        if len(overhangs) > 0:
+            overhang = np.sum(overhangs[:,5,0] * 2
+                *(np.amax((np.full(len(overhangs),0.5),
+                           -np.inner(overhangs[:,0,:], orientation))
+                           ,axis=0) -0.5 )**2)
+            overhang = overhang - PLAFOND_ADV * plafond  
         else: overhang = 0
         
+
         # filter the total length of the bottom area's contour
         if self.extended_mode:
-            contours = np.array([face for face in mesh
-            if face[5,2] < total_min + FIRST_LAY_H < face[5,1] ])
-            #print("contour count:", str(len(contours)))
+            contours = mesh[total_min+FIRST_LAY_H < mesh[:,5,1]]
+            contours = mesh[mesh[:,5,2] < total_min+FIRST_LAY_H]
             
             if len(contours) > 0:
-                #print(contours[:,4,:])
-                con = np.array([np.subtract(face[1+np.argsort(face[4,:])[0],:],
-                                            face[1+np.argsort(face[4,:])[1],:])
-                                            for face in contours])
+                conlen = np.arange(len(contours))
+                sortsc0 = np.argsort(contours[:,4,:], axis=1)[:,0]
+                sortsc1 = np.argsort(contours[:,4,:], axis=1)[:,1]
+
+                con = np.array([np.subtract(
+                    contours[conlen,1+sortsc0,:],
+                    contours[conlen,1+sortsc1,:])])
+                    
                 contours = np.sum(np.abs(con)**2, axis=-1)**0.5
                 contour = np.sum(contours)     
-            else: #if no contour facets were found, set it > 0 (avoid div by 0)
-                contour = 0.1
+            else:
+                contour = 0
         else: # consider the bottom area as square, bottom=a**2 ^ contour=4*a
             contour = 4*np.sqrt(bottom)
         
