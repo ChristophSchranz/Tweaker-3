@@ -206,16 +206,14 @@ class printableObject(object):
 		self.processMatrix()
 
 		
-		# Replaced to Auto Rotate Object
+		# Replaced with Auto Rotate Object
 	def layFlat(self):
-		st = time.time()
+#		st=time.time()
 
-		mesh = list(map(lambda v: [v[0], v[1], v[2]], self._meshList[0].vertexes))
+		TweakedObject = MeshTweaker.Tweak(self._meshList[0].vertexes)
 
-		TweakedObject = MeshTweaker.Tweak(mesh)
-	
 		self.applyMatrix(numpy.matrix(TweakedObject.Matrix, numpy.float64))
-		
+
 #		with open("C:\\Users\\Chris\\Desktop\\log.txt", "w") as f:
 #			f.write(str(self._originFilename)+ "\ntime needed: " + str(time.time()-st))
 		

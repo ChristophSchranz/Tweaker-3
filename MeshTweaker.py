@@ -40,11 +40,10 @@ class Tweak:
     And the relative unprintability of the tweaked object. If this value is
      greater than 10, a support structure is suggested.
         """
-    def __init__(self, content, extended_mode=False, verbose=True, 
-                 def_z=[0,0,1]):
+    def __init__(self, content, extended_mode=False, verbose=True):
 
         self.extended_mode = extended_mode
-        n = -np.array(def_z, dtype=np.float64)
+        n = -np.array([0,0,1], dtype=np.float64)
         orientations = [[list(n), 0.0]]
         
         ## Preprocess the input mesh format.
@@ -290,7 +289,7 @@ Time-stats of algorithm:
         else: plafond = 0
         if len(overhangs) > 0:
             overhang = np.sum(overhangs[:,5,0] * 2
-                *(np.amax((np.full(len(overhangs),0.5),
+                *(np.amax((np.zeros(len(overhangs))+0.5,
                            -np.inner(overhangs[:,0,:], orientation))
                            ,axis=0) -0.5 )**2)
             overhang = overhang - PLAFOND_ADV * plafond  
