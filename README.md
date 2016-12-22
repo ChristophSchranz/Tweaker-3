@@ -1,5 +1,5 @@
 # Tweaker-3
-##The Tweaker is an auto-rotate module which finds the STL or 3mf object's optimal orientation on the printing platform to improve the efficiency of 3D printing.
+##The Tweaker is an auto-rotate module which finds the STL or 3MF object's optimal orientation on the printing platform to improve the efficiency of 3D printing.
 
 Author: Christoph Schranz, 12.01.2016 
 
@@ -9,14 +9,14 @@ Author: Christoph Schranz, 12.01.2016
 
 `python Tweaker.py -i demo_object.stl -vb`
 
-Make shure you've installed the latest version of numpy:
+Make sure you've installed the latest version of numpy:
 
 `pip install numpy --upgrade`
 
 
 ## Extended mode:
 
-This mode is more reliable, but time consuming
+This mode yields more reliable results, but needs more time.
 
 `python Tweaker.py -i death_star.stl -vb -x`
 
@@ -37,3 +37,7 @@ No Problem, the previous version 2 is completely numpy-less (but slower):
 ## Cura Plugin:
 
 PlugIn for both Cura 15 and Cura 2.3 are supported. Infos are in the descriptions.
+
+## Want to build your own application?
+
+This [Whitepaper](https://www.researchgate.net/publication/311765131_Tweaker_-_Auto_Rotation_Module_for_FDM_3D_Printing) declares how this function works. Additionally, background infos and benchmarks are provided.
