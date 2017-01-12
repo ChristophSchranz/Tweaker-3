@@ -11,7 +11,7 @@ import numpy as np
 
 # Constants used:
 VECTOR_TOL = 0.001  # To remove alignment duplicates, the vector tolerance is 
-                    # used to distinguish whether two vectors are the same.
+                    # used to distinguish two vectors.
 PLAFOND_ADV = 0.2   # Printing a plafond is known to be more effective than
                     # very step overhangs. This value sets the advantage in %.
 FIRST_LAY_H = 0.1   # Since the initial layer of a print has a higher altitude
@@ -271,8 +271,7 @@ Time-stats of algorithm:
         total_min = np.amin(mesh[:,4,:])
 
         # filter bottom area        
-        bottoms = np.array([face for face in mesh
-                if face[5,1] < total_min + FIRST_LAY_H])
+        bottoms = mesh[mesh[:,5,1] < total_min + FIRST_LAY_H]
         if len(bottoms) > 0:
             bottom = np.sum(bottoms[:,5,0]) 
         else: bottom = 0
