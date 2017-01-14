@@ -153,8 +153,9 @@ Time-stats of algorithm:
         mesh = np.hstack((mesh, addendum))
         
         # filter faces without area
-        mesh[mesh[:,5,0]!=0]
-
+        mesh = mesh[mesh[:,5,0]!=0]
+        face_count = len(mesh)
+        
         # normalise area vector and correct area size
         mesh[:,0,:] = mesh[:,0,:]/mesh[:,5,0].reshape(face_count, 1)
         mesh[:,5,0] = mesh[:,5,0]/2
