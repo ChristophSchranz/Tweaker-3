@@ -31,7 +31,7 @@ def getargs():
     args = parser.parse_args()
 
     if args.version:
-        print("Tweaker 0.3.4, (8 Dezember 2016)")
+        print("Tweaker 0.3.5, (16 January 2017)")
         return None        
     if not args.inputfile:
         try:
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         ## Creating tweaked output file
         if os.path.splitext(args.outputfile)[1].lower() in ["stl", ".stl"]:
             # If you want to write in binary, use the function rotatebinSTL(...)"
-            tweakedcontent=FileHandler.rotateSTL(Matrix, mesh, args.inputfile)       
+            tweakedcontent=FileHandler.rotatebinSTL(Matrix, mesh, args.inputfile)       
             # Support structure suggestion can be used for further applications        
             #if x.Unprintability > 7:
             #    tweakedcontent+=" {supportstructure: yes}"
@@ -122,8 +122,8 @@ if __name__ == "__main__":
                 outfile = args.outputfile
             else:
                 outfile = os.path.splitext(args.outputfile)[0]+" ({})".format(c)+os.path.splitext(args.outputfile)[1]
-            with open(outfile,'w') as outfile: # If you want to write in binary, open with "wb"
-                outfile.write(tweakedcontent)
+            with open(outfile,'wb') as outfile: # If you want to write in binary, open with "wb"
+                outfile.write(bytearray(tweakedcontent))
 
         else:
             transformation = "{} {} {} {} {} {} {} {} {} 0 0 1".format(x.Matrix[0][0], x.Matrix[0][1], x.Matrix[0][2],

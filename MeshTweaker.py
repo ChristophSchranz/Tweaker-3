@@ -240,7 +240,7 @@ Time-stats of algorithm:
         for i in o:
             duplicate = None
             for j in orientations:
-                if np.allclose(i[0],j[0], atol = 0.0001):
+                if np.allclose(i[0],j[0], atol = 0.001):
                     duplicate = True
                     break
             if duplicate is None:

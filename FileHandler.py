@@ -107,30 +107,38 @@ endfacet""" % (facett[0,0], facett[0,1], facett[0,2], facett[1,0],
         following changes in Tweaker.py: Replace "rotatebinSTL" by "rotateSTL"
         and set in the write sequence the open outfile option from "w" to "wb".
         However, the ascii version is much faster in Python 3.'''
-        face=[]
-        mesh=[]
-        i=0
-
-        rotated_content=list(map(self.rotate_vert, content, [R]*len(content)))
         
-        for li in rotated_content:      
-            face.append(li)
-            i+=1
-            if i%3==0:
-                mesh.append([face[0],face[1],face[2]])
-                face=[]
+        mesh = np.array(content, dtype=np.float64)
+        
+        # prefix area vector, if not already done (e.g. in STL format)
+        if len(mesh[0]) == 3:
+            row_number = int(len(content)/3)
+            mesh = mesh.reshape(row_number,3,3)
+        
+        # upgrade numpy with: "pip install numpy --upgrade"
+        rotated_content = np.matmul(mesh, R)
 
-        mesh = map(self.calc_nomal, mesh)
+        v0=rotated_content[:,0,:]
+        v1=rotated_content[:,1,:]
+        v2=rotated_content[:,2,:]
+        normals = np.cross( np.subtract(v1,v0), np.subtract(v2,v0)
+                                ).reshape(int(len(rotated_content)),1,3)
+        rotated_content = np.hstack((normals,rotated_content))
 
-        tweaked = "Tweaked on {}".format(time.strftime("%a %d %b %Y %H:%M:%S")
-                                ).encode().ljust(79, b" ") + b"\n"
-        tweaked += struct.pack("<I", int(len(content)/3)) #list("solid %s" % filename)
-        #tweaked += list(map(self.write_bin_facett, mesh))
-        for facett in mesh:
-            tweaked += struct.pack("<fff", facett[0][0], facett[0][1], facett[0][2])
-            tweaked += struct.pack("<fff", facett[1][0], facett[1][1], facett[1][2])
-            tweaked += struct.pack("<fff", facett[2][0], facett[2][1], facett[2][2])
-            tweaked += struct.pack("<fff", facett[3][0], facett[3][1], facett[3][2])
-            tweaked += struct.pack("<H", 0)
+        header = "Tweaked on {}".format(time.strftime("%a %d %b %Y %H:%M:%S")
+                    ).encode().ljust(79, b" ") + b"\n"
+        header += struct.pack("<I", int(len(content)/3)) #list("solid %s" % filename)
+        
+        tweaked_array = list(map(self.write_bin_facett, rotated_content))
+
+        return header + b"".join(tweaked_array)
+        
+        
+    def write_bin_facett(self, facett):
+        tweaked = struct.pack("<fff", facett[0][0], facett[0][1], facett[0][2])
+        tweaked += struct.pack("<fff", facett[1][0], facett[1][1], facett[1][2])
+        tweaked += struct.pack("<fff", facett[2][0], facett[2][1], facett[2][2])
+        tweaked += struct.pack("<fff", facett[3][0], facett[3][1], facett[3][2])
+        tweaked += struct.pack("<H", 0)
             
         return tweaked
