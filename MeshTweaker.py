@@ -5,6 +5,7 @@
 #import sys
 import math
 from time import time, sleep
+import re
 from collections import Counter
 # upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
@@ -40,7 +41,8 @@ class Tweak:
     And the relative unprintability of the tweaked object. If this value is
      greater than 10, a support structure is suggested.
         """
-    def __init__(self, content, extended_mode=False, verbose=True):
+    def __init__(self, content, extended_mode=False, verbose=True,
+                 favside=None):
 
         self.extended_mode = extended_mode
         n = -np.array([0,0,1], dtype=np.float64)
@@ -49,8 +51,11 @@ class Tweak:
         ## Preprocess the input mesh format.
         t_start = time()
         mesh = self.preprocess(content)
+        if favside:
+            mesh = self.favour_side(mesh, favside)
         t_pre = time()
-        
+
+
         ## Searching promising orientations: 
         orientations += self.area_cumulation(mesh, n)
 
@@ -58,6 +63,7 @@ class Tweak:
         if extended_mode:
             dialg_time = time()
             orientations += self.death_star(mesh, 8)
+            orientations += self.add_supplements()
             dialg_time = time() - dialg_time   
             
         t_ds = time()
@@ -161,13 +167,33 @@ Time-stats of algorithm:
         mesh[:,5,0] = mesh[:,5,0]/2
         
         # remove small facets (these are essential for countour calculation)
-        if not self.extended_mode: ## TODO remove facets smaller than a 
+        if not self.extended_mode: # TODO remove facets smaller than a
                                 #relative proportion of the total dimension
             filtered_mesh = mesh[mesh[:,5,0] > NEGL_FACE_SIZE]
             if len(filtered_mesh) > 100:
                 mesh = filtered_mesh
             
         sleep(0)  # Yield, so other threads get a bit of breathing space.
+        return mesh
+
+    def favour_side(self, mesh, favside):
+        '''This function weights one side, orientation closer than 45 deg
+        are sized up.'''
+        if type(favside)==type("str"):
+            restring = r"(-?\d*\.{0,1}\d+)[, []]*(-?\d*\.{0,1}\d+)[, []]*(-?\d*\.{0,1}\d+)\D*(-?\d*\.{0,1}\d+)"
+            x = float(re.search(restring, favside).group(1))
+            y = float(re.search(restring, favside).group(2))
+            z = float(re.search(restring, favside).group(3))
+            f = float(re.search(restring, favside).group(4))
+
+        norm = np.sqrt(np.sum(np.array([x, y, z])**2))
+        side = np.array([x,y,z]/norm)
+
+        print("You favour the side {} with a factor of {}".format(
+            side, f))
+        mesh[:,5,0] = np.where(np.sum(
+            np.subtract(mesh[:,0,:], side)**2, axis=1) < 0.7654,
+            f * mesh[:,5,0], mesh[:,5,0])
         return mesh
 
 
@@ -234,13 +260,27 @@ Time-stats of algorithm:
         return top_n
 
 
+    def add_supplements(self):
+        '''Supplement 18 additional vectors'''
+        v = [[0,0,-1], [0.70710678,0,-0.70710678],[0,0.70710678,-0.70710678],
+             [-0.70710678,0,-0.70710678],[0,-0.70710678,-0.70710678],
+    [1,0,0],[0.70710678,0.70710678,0],[0,1,0],[-0.70710678,0.70710678,0],
+    [-1,0,0],[-0.70710678,-0.70710678,0],[0,-1,0],[0.70710678,-0.70710678,0],
+            [0.70710678,0,0.70710678],[0,0.70710678,0.70710678],
+             [-0.70710678,0,0.70710678],[0,-0.70710678,0.70710678],[0,0,1]]
+        v = [[[float(j) for j in i],0] for i in v]
+        return v
+        
+        
     def remove_duplicates(self, o):
         '''Removing duplicates in orientation'''
         orientations = list()
         for i in o:
             duplicate = None
             for j in orientations:
-                if np.allclose(i[0],j[0], atol = 0.001):
+                # redundant vectors have an angle smaller than
+                # alpha = arcsin(atol). atol=0.087 -> alpha = 5
+                if np.allclose(i[0],j[0], atol = 0.087):
                     duplicate = True
                     break
             if duplicate is None:

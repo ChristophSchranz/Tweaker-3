@@ -20,9 +20,21 @@ This mode yields more reliable results, but needs more time.
 
 `python Tweaker.py -i death_star.stl -vb -x`
 
+## Designer Mode:
+
+For many Designs, the smoothness of one side's surface is more important.
+Therefore, orientations closer than 45 deg to a vector can be weighted.
+The use of the extended mode -x is also recommeded. Here is an example on
+how to favour the side x,y,z=0,-1,2.5 with a factor of 3:
+
+`python Tweaker.py -i demo_object.stl -vb -x -fs "[[0,-1,2.5],3]"`
+
 ## Converting a 3mf object to stl without tweaking:
 
 `python Tweaker.py -i pyramid.3mf -c`
+
+If you want to change the default output representation to ASCII, uncomment/comment
+the block in Tweaker.py as described there. (Search for "ASCII" or "binary")
 
 ## Find more options:
 

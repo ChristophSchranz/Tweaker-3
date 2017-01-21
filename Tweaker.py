@@ -27,16 +27,20 @@ def getargs():
                         help="print version number and exit", default=False)
     parser.add_argument('-r', '--result', action="store_true", dest="result",
                         help="show result of calculation and exit without creating output file",
-                        default=False)                            
+                        default=False)
+    parser.add_argument('-fs', '--favside', type=str, dest="favside",
+                        help="favour one orientation with a vector and weighting, e.g.  '[[0,-1,2],3]'",
+                        default=None)
     args = parser.parse_args()
 
     if args.version:
-        print("Tweaker 0.3.5, (16 January 2017)")
+        print("Tweaker 0.3.6, (21 January 2017)")
         return None        
     if not args.inputfile:
         try:
             curpath = os.path.dirname(os.path.realpath(__file__))
             args.inputfile=curpath + os.sep + "demo_object.stl"
+            args.inputfile=curpath + os.sep + "Base repaired.stl"
             #args.inputfile=curpath + os.sep + "death_star.stl"
             #args.inputfile=curpath + os.sep + "pyramid.3mf"
             
@@ -53,7 +57,8 @@ demo object in verbose mode. Use argument -h for help.
 """)
         args.convert = False
         args.verbose = True
-        args.extended_mode = False            
+        args.extended_mode = True
+        args.favside = None #"[[0,-0.5,1],2.5]"
     return args
 
 
@@ -89,7 +94,7 @@ if __name__ == "__main__":
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose)
+                x = Tweak(mesh, args.extended_mode, args.verbose, args.favside)
                 Matrix = x.Matrix
             except (KeyboardInterrupt, SystemExit):
                 print("\nError, tweaking process failed!")
@@ -113,18 +118,24 @@ if __name__ == "__main__":
           
         ## Creating tweaked output file
         if os.path.splitext(args.outputfile)[1].lower() in ["stl", ".stl"]:
-            # If you want to write in binary, use the function rotatebinSTL(...)"
-            tweakedcontent=FileHandler.rotatebinSTL(Matrix, mesh, args.inputfile)       
+            if len(objs) <= 1:
+                outfile = args.outputfile
+            else:
+                outfile=os.path.splitext(args.outputfile)[0]+" ({})".format(c)+os.path.splitext(args.outputfile)[1]
+
+            # The default output representation is binary STL. If you want to change it
+            # to ASCII, change the comments of the equivalent blocks:
+            tweakedcontent = FileHandler.rotatebinSTL(Matrix, mesh, args.inputfile)
+            with open(outfile,'wb') as outfile:
+                outfile.write(bytearray(tweakedcontent))
+
+            # This block is used for the ASCII representation
+            # tweakedcontent=FileHandler.rotateSTL(Matrix, mesh, args.inputfile)
             # Support structure suggestion can be used for further applications        
             #if x.Unprintability > 7:
             #    tweakedcontent+=" {supportstructure: yes}"
-            if len(objs)<=1:
-                outfile = args.outputfile
-            else:
-                outfile = os.path.splitext(args.outputfile)[0]+" ({})".format(c)+os.path.splitext(args.outputfile)[1]
-            with open(outfile,'wb') as outfile: # If you want to write in binary, open with "wb"
-                outfile.write(bytearray(tweakedcontent))
-
+            #with open(outfile,'w') as outfile:
+            #    outfile.write(tweakedcontent)
         else:
             transformation = "{} {} {} {} {} {} {} {} {} 0 0 1".format(x.Matrix[0][0], x.Matrix[0][1], x.Matrix[0][2],
                                 x.Matrix[1][0], x.Matrix[1][1], x.Matrix[1][2], x.Matrix[2][0], x.Matrix[2][1], x.Matrix[2][2])
