@@ -40,7 +40,6 @@ def getargs():
         try:
             curpath = os.path.dirname(os.path.realpath(__file__))
             args.inputfile=curpath + os.sep + "demo_object.stl"
-            args.inputfile=curpath + os.sep + "Base repaired.stl"
             #args.inputfile=curpath + os.sep + "death_star.stl"
             #args.inputfile=curpath + os.sep + "pyramid.3mf"
             
