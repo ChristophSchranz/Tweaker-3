@@ -36,9 +36,13 @@ how to favour the side x,y,z=0,-1,2.5 with a factor of 3:
 If you want to change the default output representation to ASCII, uncomment/comment
 the block in Tweaker.py as described there. (Search for "ASCII" or "binary")
 
+## Just watch the results:
+
+`python Tweaker.py -i demo_object.stl -r`
+
 ## Find more options:
 
-`python FileHandler.py -h`
+`python Tweaker.py -h`
 
 ## Not installed numpy yet?
 
