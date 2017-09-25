@@ -1,26 +1,32 @@
-## Author: Christoph Schranz, Salzburg Research, 2015/16
-## Contact: christoph.schranz@salzburgresearch.at
+# -*- coding: utf-8 -*-
 
-## You can preset the default model in line 42
-
-import sys, argparse
+import sys
+import argparse
 import os
 from time import time
 from MeshTweaker import Tweak
 import FileHandler
 
+# You can preset the default model in line 42
+
+__author__ = "Christoph Schranz, Salzburg Research"
+__version__ = "3.7"
+
 
 def getargs():
-    parser = argparse.ArgumentParser(description=
-            "Orientation tool for better 3D prints")
-    parser.add_argument('-vb', '--verbose', action="store_true",dest="verbose", 
-                        help="increase output verbosity", default=False)
+    parser = argparse.ArgumentParser(description="Orientation tool for better 3D prints")
     parser.add_argument('-i', action="store",  
                         dest="inputfile", help="select input file")
     parser.add_argument('-o', action="store", dest="outputfile",
                         help="select output file. '_tweaked' is postfix by default")
-    parser.add_argument('-c', '--convert', action="store_true",dest="convert", 
+    parser.add_argument('-vb', '--verbose', action="store_true", dest="verbose",
+                        help="increase output verbosity", default=False)
+    parser.add_argument('-p', '--progress', action="store_true", dest="show_progress",
+                        help="show the progress of Tweaking", default=False)
+    parser.add_argument('-c', '--convert', action="store_true", dest="convert",
                         help="convert 3mf to stl without tweaking", default=False)
+    parser.add_argument('-t', '--outputtype', action="store", dest="output_type", default=False,
+                        help='set output representation [default="binarystl", "asciistl", "3mf"]')
     parser.add_argument('-x', '--extended', action="store_true", dest="extended_mode", default=False,
                         help="using more algorithms and examine more alignments")
     parser.add_argument('-v', '--version', action="store_true", dest="version",
@@ -31,39 +37,72 @@ def getargs():
     parser.add_argument('-fs', '--favside', type=str, dest="favside",
                         help="favour one orientation with a vector and weighting, e.g.  '[[0,-1,2],3]'",
                         default=None)
-    args = parser.parse_args()
+    arguments = parser.parse_args()
 
-    if args.version:
-        print("Tweaker 0.3.6, (21 January 2017)")
-        return None        
-    if not args.inputfile:
+    if arguments.version:
+        print("Tweaker 3.7, (21 September 2017)")
+        return None
+
+    if not arguments.inputfile:
         try:
             curpath = os.path.dirname(os.path.realpath(__file__))
-            args.inputfile=curpath + os.sep + "demo_object.stl"
-            #args.inputfile=curpath + os.sep + "death_star.stl"
-            #args.inputfile=curpath + os.sep + "pyramid.3mf"
-            
-        except:
-            return None          
-    if not args.outputfile:
-        args.outputfile = os.path.splitext(args.inputfile)[0] + "_tweaked"
-        args.outputfile += ".stl" #Because 3mf is not supported for output #TODO
+            arguments.inputfile = curpath + os.sep + "demo_object.stl"
+            # arguments.inputfile = curpath + os.sep + "death_star.stl"
+            # arguments.inputfile = curpath + os.sep + "mobius_strip.stl"
+            # arguments.inputfile = curpath + os.sep + "pyramid.3mf"
+        except FileNotFoundError:
+            return None
+
+    if arguments.output_type:
+        print(arguments.output_type)
+        if "3mf" in arguments.output_type.lower():
+            filetype = "3mf"
+        elif "asci" in arguments.output_type.lower():
+            filetype = "asciistl"
+        else:
+            filetype = "binarystl"
+    else:
+        if "3mf" in os.path.splitext(arguments.inputfile)[1]:
+            filetype = "3mf"
+        else:
+            filetype = "binarystl"
+    arguments.output_type = filetype
+
+    if arguments.outputfile:
+        filetype = arguments.outputfile.split(".")[-1].lower()
+        if filetype not in ["stl", "3mf"]:
+            raise TypeError("Filetype not supported")
+        arguments.outputfile = "".join(arguments.outputfile.split(".")[:-1]) + "." + filetype
+        if not arguments.output_type:
+            arguments.output_type = filetype
+    else:
+        if arguments.convert:
+            arguments.outputfile = os.path.splitext(arguments.inputfile)[0] + "_converted"
+        else:
+            arguments.outputfile = os.path.splitext(arguments.inputfile)[0] + "_tweaked"
+
+        if arguments.output_type == "3mf":
+            arguments.outputfile += ".3mf"  # TODO not supported yet
+        else:
+            arguments.outputfile += ".stl"
 
     argv = sys.argv[1:]
-    if len(argv)==0:
+    if len(argv) == 0:
         print("""No additional arguments. Testing calculation with 
 demo object in verbose mode. Use argument -h for help.
 """)
-        args.convert = False
-        args.verbose = True
-        args.extended_mode = True
-        args.favside = None #"[[0,-0.5,1],2.5]"
-    return args
+        arguments.convert = False
+        arguments.verbose = True
+        # arguments.show_progress = True
+        arguments.extended_mode = True
+        arguments.favside = None  # "[[0,-0.5,1],2.5]"
+        # arguments.output_type = "asciistl"
+    return arguments
 
 
 if __name__ == "__main__":
-    ## Get the command line arguments. Run in IDE for demo tweaking.
-    stime=time()
+    # Get the command line arguments. Run in IDE for demo tweaking.
+    stime = time()
     try:
         args = getargs()
         if args is None:
@@ -73,76 +112,52 @@ if __name__ == "__main__":
         
     try:
         FileHandler = FileHandler.FileHandler()
-        objs = FileHandler.loadMesh(args.inputfile)
-        
+        objs = FileHandler.load_mesh(args.inputfile)
         if objs is None:
             sys.exit()
     except(KeyboardInterrupt, SystemExit):
-        print("\nError, loading mesh from file failed!")
-        raise
+        raise SystemExit("Error, loading mesh from file failed!")
         
-    ## Start of tweaking.
+    # Start of tweaking.
     if args.verbose:
-        print("Calculating the optimal orientation:\n  {}\n"
-                        .format(args.inputfile.split("\\")[-1]))
+        print("Calculating the optimal orientation:\n  {}"
+              .format(args.inputfile.split(os.sep)[-1]))
+
     c = 0
-    for obj in objs:
-        mesh = obj["Mesh"]
+    info = dict()
+    for part, content in objs.items():
+        mesh = content["mesh"]
+        info[part] = dict()
         if args.convert:
-            Matrix=[[1,0,0],[0,1,0],[0,0,1]]
+            info[part]["matrix"] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.favside)
-                Matrix = x.Matrix
+                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside)
+                info[part]["matrix"] = x.matrix
+                info[part]["tweaker_stats"] = x
             except (KeyboardInterrupt, SystemExit):
-                print("\nError, tweaking process failed!")
-                raise
-            ## List tweaking results
+                raise SystemExit("\nError, tweaking process failed!")
+
+            # List tweaking results
             if args.result or args.verbose:
-                print("\nResult-stats:")
-                print(" Tweaked Z-axis: \t{}".format((x.Alignment)))
-                print(" Axis, angle:   \t{}".format(x.Euler))
+                print("Result-stats:")
+                print(" Tweaked Z-axis: \t{}".format(x.alignment))
+                print(" Axis, angle:   \t{}".format(x.euler_parameter))
                 print(""" Rotation matrix: 
             {:2f}\t{:2f}\t{:2f}
             {:2f}\t{:2f}\t{:2f}
-            {:2f}\t{:2f}\t{:2f}""".format(x.Matrix[0][0], x.Matrix[0][1], x.Matrix[0][2],
-                                          x.Matrix[1][0], x.Matrix[1][1], x.Matrix[1][2], 
-                                          x.Matrix[2][0], x.Matrix[2][1], x.Matrix[2][2]))
-                print(" Unprintability: \t{}".format(x.Unprintability))
+            {:2f}\t{:2f}\t{:2f}""".format(x.matrix[0][0], x.matrix[0][1], x.matrix[0][2],
+                                          x.matrix[1][0], x.matrix[1][1], x.matrix[1][2],
+                                          x.matrix[2][0], x.matrix[2][1], x.matrix[2][2]))
+                print(" Unprintability: \t{}".format(x.unprintability))
                 
-                print("\nFound result:    \t{:2f} s".format(time()-cstime))
-                if args.result: 
-                    sys.exit()   
-          
-        ## Creating tweaked output file
-        if os.path.splitext(args.outputfile)[1].lower() in ["stl", ".stl"]:
-            if len(objs) <= 1:
-                outfile = args.outputfile
-            else:
-                outfile=os.path.splitext(args.outputfile)[0]+" ({})".format(c)+os.path.splitext(args.outputfile)[1]
+                print("Found result:    \t{:2f} s\n".format(time()-cstime))
 
-            # The default output representation is binary STL. If you want to change it
-            # to ASCII, change the comments of the equivalent blocks:
-            tweakedcontent = FileHandler.rotatebinSTL(Matrix, mesh, args.inputfile)
-            with open(outfile,'wb') as outfile:
-                outfile.write(bytearray(tweakedcontent))
+    if not args.result:
+        FileHandler.write_mesh(objs, info, args.outputfile, args.output_type)
 
-            # This block is used for the ASCII representation
-            # tweakedcontent=FileHandler.rotateSTL(Matrix, mesh, args.inputfile)
-            # Support structure suggestion can be used for further applications        
-            #if x.Unprintability > 7:
-            #    tweakedcontent+=" {supportstructure: yes}"
-            #with open(outfile,'w') as outfile:
-            #    outfile.write(tweakedcontent)
-        else:
-            transformation = "{} {} {} {} {} {} {} {} {} 0 0 1".format(x.Matrix[0][0], x.Matrix[0][1], x.Matrix[0][2],
-                                x.Matrix[1][0], x.Matrix[1][1], x.Matrix[1][2], x.Matrix[2][0], x.Matrix[2][1], x.Matrix[2][2])
-            obj["transform"] = transformation
-            FileHandler.rotate3MF(args.inputfile, args.outputfile, objs)
-
-    
-    ## Success message
+    # Success message
     if args.verbose:
         print("Tweaking took:  \t{:2f} s".format(time()-stime))
-        print("\nSuccessfully Rotated!")
+        print("Successfully Rotated!")

@@ -37,7 +37,7 @@ def Read3mf(f):
             obj_meshs[c]["objectid"] = objectid
             
             vertex_list = []
-            obj_meshs[c]["Mesh"] = list()
+            obj_meshs[c]["mesh"] = list()
             #for vertex in object.mesh.vertices.vertex:
             for vertex in obj.findall(".//3mf:vertex", namespace):
                 vertex_list.append([vertex.get("x"), vertex.get("y"), vertex.get("z")])
@@ -48,9 +48,9 @@ def Read3mf(f):
                 v1 = int(triangle.get("v1"))
                 v2 = int(triangle.get("v2"))
                 v3 = int(triangle.get("v3"))
-                obj_meshs[c]["Mesh"].append([float(vertex_list[v1][0]),float(vertex_list[v1][1]),float(vertex_list[v1][2])])
-                obj_meshs[c]["Mesh"].append([float(vertex_list[v2][0]),float(vertex_list[v2][1]),float(vertex_list[v2][2])])
-                obj_meshs[c]["Mesh"].append([float(vertex_list[v3][0]),float(vertex_list[v3][1]),float(vertex_list[v3][2])])
+                obj_meshs[c]["mesh"].append([float(vertex_list[v1][0]),float(vertex_list[v1][1]),float(vertex_list[v1][2])])
+                obj_meshs[c]["mesh"].append([float(vertex_list[v2][0]),float(vertex_list[v2][1]),float(vertex_list[v2][2])])
+                obj_meshs[c]["mesh"].append([float(vertex_list[v3][0]),float(vertex_list[v3][1]),float(vertex_list[v3][2])])
 
 
             try:
