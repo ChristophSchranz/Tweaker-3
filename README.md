@@ -1,6 +1,7 @@
 # Tweaker-3
-##The Tweaker is an auto-rotate module which finds the STL or 3MF object's optimal orientation on the printing platform to improve the efficiency of 3D printing.
+## The Tweaker is an auto-rotate module which finds the STL or 3MF object's optimal orientation on the printing platform to improve the efficiency of 3D printing.
 
+![alt text](https://github.com/ChristophSchranz/Tweaker-3/blob/master/auto-rotation.png "Auto-rotation of a model")
 Author: Christoph Schranz, 12.01.2016 
 
 [Salzburg Resarch](http://www.salzburgresearch.at/blog/3d-print-positioning/)
