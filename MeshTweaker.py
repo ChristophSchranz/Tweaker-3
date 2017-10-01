@@ -39,7 +39,7 @@ class Tweak:
      greater than 10, a support structure is suggested.
         """
     def __init__(self, content, extended_mode=False, verbose=True,
-                 show_progress=False, favside=None):
+                 show_progress=False, favside=None, min_volume=False):
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -77,15 +77,13 @@ class Tweak:
         progress = self.print_progress(progress)
 
         # Calculate the unprintability for each orientation
-        #results = np.array([None, None, None, None, np.inf])
         results = list()
         for side in orientations:
-            #orientation = np.array([float("{:6f}".format(-i)) for i in side[0]])
             orientation = [float("{:6f}".format(-i)) for i in side[0]]
 
             mesh = self.project_verteces(mesh, orientation)
-            bottom, overhang, contour = self.lithograph(mesh, orientation)
-            unprintability = self.target_function(bottom, overhang, contour)
+            bottom, overhang, contour = self.calc_overhang(mesh, orientation, min_volume=min_volume)
+            unprintability = self.target_function(bottom, overhang, contour, min_volume=min_volume)
             # results = np.vstack((results, [orientation, bottom,
             #                                overhang, contour, unprintability]))
             results.append([orientation, bottom, overhang, contour, unprintability])
@@ -131,17 +129,24 @@ class Tweak:
             self.unprintability = best_5_results[0][4]
             self.best_5 = best_5_results
 
-    def target_function(self, bottom, overhang, contour):
+    def target_function(self, bottom, overhang, contour, min_volume):
         """This function returns the Unprintability for a given set of bottom
         overhang area and bottom contour lenght, based on an ordinal scale.
         Args:
             bottom (float): bottom area size.
             overhang (float): overhanging area size.
             contour (float): length of the bottom's contour.
+            min_volume (bool): Minimise volume of support material or supported surface area
         Returns:
             a value for the unprintability. The smaller, the better."""
-        unprintability = (overhang/ABSOLUTE_F
-                          + (overhang + 1) / (1 + CONTOUR_F*contour + bottom) / RELATIVE_F)
+        if min_volume:  # minimize the volume of support material
+            overhang /= 5  # a volume is of higher dimension, so the overhang have to be reduced
+            unprintability = (overhang/ABSOLUTE_F
+                              + (overhang + 1) / (1 + CONTOUR_F*contour + bottom) / RELATIVE_F)
+
+        else:  # minimize supported sufaces
+            unprintability = (overhang/ABSOLUTE_F
+                              + (overhang + 1) / (1 + CONTOUR_F*contour + bottom) / RELATIVE_F)
         return round(unprintability, 6)
 
     def preprocess(self, content):
@@ -324,8 +329,8 @@ class Tweak:
             old_orients (list): list of faces
         Returns:
             Unique orientations"""
-        alpha = 5  # degrees
-        tol_angle = np.sin(5 * np.pi / 180)
+        alpha = 5  # in degrees
+        tol_angle = np.sin(alpha * np.pi / 180)
         orientations = list()
         for i in old_orients:
             duplicate = None
@@ -357,20 +362,21 @@ class Tweak:
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return mesh
 
-    def lithograph(self, mesh, orientation):
+    def calc_overhang(self, mesh, orientation, min_volume):
         """Calculating bottom and overhang area for a mesh regarding
         the vector n.
         Args:
             mesh (np.array): with format face_count x 6 x 3.
             orientation (np.array): with format 3 x 3.
+            min_volume (bool): minimize the support material volume or supported surfaces
         Returns:
             the total bottom size, overhang size and contour length of the mesh
         """
-        ascent = np.cos(120*np.pi/180)
+        ascent = np.cos(120 * np.pi / 180)
         anti_orient = -np.array(orientation)
         total_min = np.amin(mesh[:, 4, :])
 
-        # filter bottom area        
+        # filter bottom area
         bottoms = mesh[mesh[:, 5, 1] < total_min + FIRST_LAY_H]
         if len(bottoms) > 0:
             bottom = np.sum(bottoms[:, 5, 0])
@@ -391,35 +397,46 @@ class Tweak:
             plafond = 0
 
         if len(overhangs) > 0:
-            overhang = np.sum(overhangs[:, 5, 0] * 2 *
-                              (np.amax((np.zeros(len(overhangs))+0.5,
-                                        - np.inner(overhangs[:, 0, :], orientation)),
-                                       axis=0) - 0.5)**2)
+            if min_volume:
+                centers = overhangs[:, 1:4, :].sum(axis=1)/3
+                heigths = np.inner(centers[:], orientation)-total_min
+
+                overhang = np.sum(heigths *
+                                  (np.amax((np.zeros(len(overhangs)) + 0.5,
+                                            - np.inner(overhangs[:, 0, :], orientation)),
+                                           axis=0) - 0.5) ** 2)
+            else:
+                overhang = np.sum(overhangs[:, 5, 0] * 2 *
+                                  (np.amax((np.zeros(len(overhangs)) + 0.5,
+                                            - np.inner(overhangs[:, 0, :], orientation)),
+                                           axis=0) - 0.5) ** 2)
+
             overhang -= PLAFOND_ADV * plafond
+
         else:
             overhang = 0
 
         # filter the total length of the bottom area's contour
         if self.extended_mode:
             # contours = mesh[total_min+FIRST_LAY_H < mesh[:, 5, 1]]
-            contours = mesh[mesh[:, 5, 2] < total_min+FIRST_LAY_H]
-            
+            contours = mesh[mesh[:, 5, 2] < total_min + FIRST_LAY_H]
+
             if len(contours) > 0:
                 conlen = np.arange(len(contours))
                 sortsc0 = np.argsort(contours[:, 4, :], axis=1)[:, 0]
                 sortsc1 = np.argsort(contours[:, 4, :], axis=1)[:, 1]
 
                 con = np.array([np.subtract(
-                    contours[conlen, 1+sortsc0, :],
-                    contours[conlen, 1+sortsc1, :])])
-                    
-                contours = np.sum(np.power(con, 2), axis=-1)**0.5
-                contour = np.sum(contours)     
+                    contours[conlen, 1 + sortsc0, :],
+                    contours[conlen, 1 + sortsc1, :])])
+
+                contours = np.sum(np.power(con, 2), axis=-1) ** 0.5
+                contour = np.sum(contours)
             else:
                 contour = 0
         else:  # consider the bottom area as square, bottom=a**2 ^ contour=4*a
-            contour = 4*np.sqrt(bottom)
-        
+            contour = 4 * np.sqrt(bottom)
+
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return bottom, overhang, contour
 

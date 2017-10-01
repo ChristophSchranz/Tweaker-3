@@ -10,7 +10,7 @@ import FileHandler
 # You can preset the default model in line 42
 
 __author__ = "Christoph Schranz, Salzburg Research"
-__version__ = "3.7"
+__version__ = "3.8"
 
 
 def getargs():
@@ -37,10 +37,12 @@ def getargs():
     parser.add_argument('-fs', '--favside', type=str, dest="favside",
                         help="favour one orientation with a vector and weighting, e.g.  '[[0,-1,2],3]'",
                         default=None)
+    parser.add_argument('-vol', '--volume', action="store_true", dest="volume",
+                        help="choose to minimise supported surface or volume of support material", default=False)
     arguments = parser.parse_args()
 
     if arguments.version:
-        print("Tweaker 3.7, (21 September 2017)")
+        print("Tweaker 3.8, (30 September 2017)")
         return None
 
     if not arguments.inputfile:
@@ -48,8 +50,9 @@ def getargs():
             curpath = os.path.dirname(os.path.realpath(__file__))
             arguments.inputfile = curpath + os.sep + "demo_object.stl"
             # arguments.inputfile = curpath + os.sep + "death_star.stl"
-            # arguments.inputfile = curpath + os.sep + "mobius_strip.stl"
             # arguments.inputfile = curpath + os.sep + "pyramid.3mf"
+            # arguments.inputfile = curpath + os.sep + "3DBenchy2.stl"
+            arguments.inputfile = curpath + os.sep + "all.stl"
         except FileNotFoundError:
             return None
 
@@ -92,11 +95,13 @@ def getargs():
 demo object in verbose mode. Use argument -h for help.
 """)
         arguments.convert = False
-        arguments.verbose = True
+        arguments.verbose = False#True
         # arguments.show_progress = True
         arguments.extended_mode = True
         arguments.favside = None  # "[[0,-0.5,1],2.5]"
         # arguments.output_type = "asciistl"
+        # arguments.volume = True
+
     return arguments
 
 
@@ -133,7 +138,7 @@ if __name__ == "__main__":
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside)
+                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
                 info[part]["matrix"] = x.matrix
                 info[part]["tweaker_stats"] = x
             except (KeyboardInterrupt, SystemExit):

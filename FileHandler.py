@@ -20,12 +20,12 @@ class FileHandler:
         filetype = os.path.splitext(inputfile)[1].lower()
         if filetype == ".stl":
             f = open(inputfile, "rb")
-            if f.read(5).lower() == "solid":
+            if "solid" in str(f.read(5).lower()):
                 try:
                     f = open(inputfile, "r")
                     objs = self.load_ascii_stl(f)
                 except UnicodeDecodeError:
-                #if len(objs[0]["mesh"]) < 3:
+                    # if len(objs[0]["mesh"]) < 3:
                     f.seek(5, os.SEEK_SET)
                     objs = self.load_binary_stl(f)
             else:
@@ -61,7 +61,6 @@ class FileHandler:
         for k, v in objects.items():
             if len(v["mesh"]) > 3:
                 objs[k] = v
-
         return objs
 
     def load_binary_stl(self, f):
@@ -97,7 +96,7 @@ class FileHandler:
                 if len(objects.keys()) == 1:
                     outname = outputfile
                 else:
-                    outname = "".join(outputfile.split(".")[:-1]) + "_{}.stl"
+                    outname = "".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
                 with open(outname, 'w') as outfile:
                     outfile.write(tweakedcontent)
 
@@ -112,7 +111,7 @@ class FileHandler:
                 if len(objects.keys()) == 1:
                     outname = "".join(outputfile.split(".")[:-1]) + ".stl"
                 else:
-                    outname = "".join(outputfile.split(".")[:-1]) + "_{}.stl"
+                    outname = "".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
                 length = struct.pack("<I", int(len(mesh) / 3))
                 with open(outname, 'wb') as outfile:
                     outfile.write(bytearray(header + length + b"".join(tweaked_array)))

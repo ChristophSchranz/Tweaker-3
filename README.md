@@ -18,6 +18,15 @@ This mode yields the most reliable results, but needs more computation time.
 `python Tweaker.py -i death_star.stl -vb -x`
 
 
+### Minimise the necessary support material:
+
+If you want to optimise the print in terms of minimal support material volume, add the flag -vol.
+The extended mode is suggested for this operation.
+
+`python Tweaker.py -i demo_object.stl -vol -x`
+
+
+
 ### Convert a 3mf object to stl without tweaking:
 
 `python Tweaker.py -i pyramid.3mf -c`
