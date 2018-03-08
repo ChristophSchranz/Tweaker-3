@@ -18,6 +18,7 @@ class FileHandler:
         """This module loads the content of a 3D file as mesh array."""
         
         filetype = os.path.splitext(inputfile)[1].lower()
+        print inputfile
         if filetype == ".stl":
             f = open(inputfile, "rb")
             if "solid" in str(f.read(5).lower()):
@@ -35,12 +36,35 @@ class FileHandler:
             object = ThreeMF.Read3mf(inputfile)  # TODO not implemented
             #objs[0] = {"mesh": list(), "name": "binary file"}
             objs = {0: {"mesh": object[0]["mesh"], "name": "3mf file"}}
+        elif filetype == ".obj":
+            f = open(inputfile, "rb")
+            objs = self.load_obj(f)
 
         else:
             print("File type is not supported.")
             sys.exit()
-
+        print objs
+        print len(objs[0]["mesh"])
         return objs
+
+    def load_obj(self, f):
+        """Load the content of an OBJ file."""
+        objects = dict()
+        vertices = list()
+        objects[0] = {"mesh": list(), "name": "obj file"}
+        for line in f:
+            if "v" in line:
+                data = line.split()[1:]
+                vertices.append([float(data[0]), float(data[1]), float(data[2])])
+        f.seek(0, 0)
+        for line in f:
+            if "f" in line:
+                data = line.split()[1:]
+                objects[0]["mesh"].append(vertices[int(data[0])-1])
+                objects[0]["mesh"].append(vertices[int(data[1])-1])
+                objects[0]["mesh"].append(vertices[int(data[2])-1])
+
+        return objects
 
     def load_ascii_stl(self, f):
         """Load the content of an ASCII STL file."""

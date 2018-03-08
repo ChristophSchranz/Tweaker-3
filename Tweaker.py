@@ -73,7 +73,7 @@ def getargs():
 
     if arguments.outputfile:
         filetype = arguments.outputfile.split(".")[-1].lower()
-        if filetype not in ["stl", "3mf"]:
+        if filetype not in ["stl", "3mf", "obj"]:
             raise TypeError("Filetype not supported")
         arguments.outputfile = "".join(arguments.outputfile.split(".")[:-1]) + "." + filetype
         if not arguments.output_type:
