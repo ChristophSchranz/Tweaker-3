@@ -18,7 +18,6 @@ class FileHandler:
         """This module loads the content of a 3D file as mesh array."""
         
         filetype = os.path.splitext(inputfile)[1].lower()
-        print inputfile
         if filetype == ".stl":
             f = open(inputfile, "rb")
             if "solid" in str(f.read(5).lower()):
@@ -43,8 +42,7 @@ class FileHandler:
         else:
             print("File type is not supported.")
             sys.exit()
-        print objs
-        print len(objs[0]["mesh"])
+
         return objs
 
     def load_obj(self, f):
