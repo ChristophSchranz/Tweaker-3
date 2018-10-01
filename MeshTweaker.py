@@ -129,7 +129,7 @@ class Tweak:
             self.unprintability = best_5_results[0][4]
             self.best_5 = best_5_results
 
-        # while showing progress below we just do LF without CR. Now we're done and it's time to stop ahead...
+        # It'd be nice to finish with a nice clean newline, as print_progress rewrites updates without advancing below...
         if show_progress:
             print("\n")
 
