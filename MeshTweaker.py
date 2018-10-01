@@ -3,7 +3,7 @@
 import math
 from time import time, sleep
 import re
-import os
+# import os
 from collections import Counter
 # upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
@@ -128,6 +128,11 @@ class Tweak:
             self.contour = best_5_results[0][3]
             self.unprintability = best_5_results[0][4]
             self.best_5 = best_5_results
+
+        # while showing progress below we just do LF withoyt CR. Now we're done and it's time to stop ahead...
+        if show_progress:
+            print("\n")
+
 
     def target_function(self, bottom, overhang, contour, min_volume):
         """This function returns the Unprintability for a given set of bottom
@@ -443,8 +448,20 @@ class Tweak:
     def print_progress(self, progress):
         progress += 18
         if self.show_progress:
-            os.system('cls')
-            print("Progress is: {} %".format(progress))
+            """ The following could be used
+            try:
+                # Windows
+                os.system('cls >nul 2>&1')
+            except:
+                # Mac OS X/Linux
+                os.system('clear')
+            finally:
+                print("Progress is: {} %".format(progress))
+            but in reality this would be better:
+            """ 
+            # Display progress on a single console line.... (assuming python3 here, as no future imported at the top)
+            print("\rProgress is: {} %".format(progress), end="")
+
         return progress
 
     def euler(self, bestside):
