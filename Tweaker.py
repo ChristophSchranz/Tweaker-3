@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
@@ -70,7 +71,7 @@ def getargs():
         else:
             filetype = "binarystl"
     arguments.output_type = filetype
-
+    print("Tweaker, arguments.output_type", arguments.output_type)
     if arguments.outputfile:
         filetype = arguments.outputfile.split(".")[-1].lower()
         if filetype not in ["stl", "3mf", "obj"]:

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import math
@@ -447,19 +448,8 @@ class Tweak:
     def print_progress(self, progress):
         progress += 18
         if self.show_progress:
-            """ The following could be used
-            try:
-                # Windows
-                os.system('cls >nul 2>&1')
-            except:
-                # Mac OS X/Linux
-                os.system('clear')
-            finally:
-                print("Progress is: {} %".format(progress))
-            but in reality this would be better:
-            """
             # Display progress on a single console line.... (assuming python3 here, as no future imported at the top)
-            print("\rProgress is: {} %".format(progress), end="")
+            print("\nProgress is: {}".format(progress), end="")
 
         return progress
 
