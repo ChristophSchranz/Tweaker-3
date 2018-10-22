@@ -4,7 +4,7 @@
 ![Auto-rotation of a model](https://github.com/ChristophSchranz/Tweaker-3/blob/master/auto-rotation.png)
 Author: Christoph Schranz, 12.01.2016 
 
-[Salzburg Resarch](http://www.salzburgresearch.at/blog/3d-print-positioning/)
+[Salzburg Research](http://www.salzburgresearch.at/blog/3d-print-positioning/)
 
 ## Quickstart:  
 
