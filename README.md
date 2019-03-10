@@ -85,5 +85,6 @@ infos and benchmarks are provided.
 
 
 ## Donation
-If this project help you reduce time to develop, you can give me a cup of coffee :) 
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RG7UBJMUNLMHN&source=url)
+If this project helps you reduce time to develop, you can give me a cup of coffee :) 
+
+[![More coffee, more code](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RG7UBJMUNLMHN&source=url)
