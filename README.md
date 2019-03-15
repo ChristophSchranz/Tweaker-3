@@ -4,7 +4,7 @@
 ![Auto-rotation of a model](https://github.com/ChristophSchranz/Tweaker-3/blob/master/auto-rotation.png)
 Author: Christoph Schranz, 12.01.2016 
 
-[Salzburg Resarch](http://www.salzburgresearch.at/blog/3d-print-positioning/)
+[Salzburg Research](http://www.salzburgresearch.at/blog/3d-print-positioning/)
 
 ## Quickstart:  
 
@@ -82,3 +82,9 @@ PlugIn from Cura 2.7 PlugIn Browser.
 This [Whitepaper](https://www.researchgate.net/publication/311765131_Tweaker_-_Auto_Rotation_Module_for_FDM_3D_Printing) 
 declares this program. Additionally, background 
 infos and benchmarks are provided.
+
+
+## Donation
+If this project helps you reduce time to develop, you can give me a cup of coffee :) 
+
+[![More coffee, more code](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RG7UBJMUNLMHN&source=url)

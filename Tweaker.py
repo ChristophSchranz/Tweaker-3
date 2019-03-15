@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
@@ -15,7 +16,7 @@ __version__ = "3.8"
 
 def getargs():
     parser = argparse.ArgumentParser(description="Orientation tool for better 3D prints")
-    parser.add_argument('-i', action="store",  
+    parser.add_argument('-i', action="store",
                         dest="inputfile", help="select input file")
     parser.add_argument('-o', action="store", dest="outputfile",
                         help="select output file. '_tweaked' is postfix by default")
@@ -70,10 +71,10 @@ def getargs():
         else:
             filetype = "binarystl"
     arguments.output_type = filetype
-
+    print("Tweaker, arguments.output_type", arguments.output_type)
     if arguments.outputfile:
         filetype = arguments.outputfile.split(".")[-1].lower()
-        if filetype not in ["stl", "3mf"]:
+        if filetype not in ["stl", "3mf", "obj"]:
             raise TypeError("Filetype not supported")
         arguments.outputfile = "".join(arguments.outputfile.split(".")[:-1]) + "." + filetype
         if not arguments.output_type:
@@ -95,7 +96,7 @@ def getargs():
 demo object in verbose mode. Use argument -h for help.
 """)
         arguments.convert = False
-        arguments.verbose = False#True
+        arguments.verbose = False  # True
         # arguments.show_progress = True
         arguments.extended_mode = True
         arguments.favside = None  # "[[0,-0.5,1],2.5]"
@@ -114,7 +115,7 @@ if __name__ == "__main__":
             sys.exit()
     except:
         raise
-        
+
     try:
         FileHandler = FileHandler.FileHandler()
         objs = FileHandler.load_mesh(args.inputfile)
@@ -122,7 +123,7 @@ if __name__ == "__main__":
             sys.exit()
     except(KeyboardInterrupt, SystemExit):
         raise SystemExit("Error, loading mesh from file failed!")
-        
+
     # Start of tweaking.
     if args.verbose:
         print("Calculating the optimal orientation:\n  {}"
@@ -156,13 +157,16 @@ if __name__ == "__main__":
                                           x.matrix[1][0], x.matrix[1][1], x.matrix[1][2],
                                           x.matrix[2][0], x.matrix[2][1], x.matrix[2][2]))
                 print(" Unprintability: \t{}".format(x.unprintability))
-                
-                print("Found result:    \t{:2f} s\n".format(time()-cstime))
+
+                print("Found result:    \t{:2f} s\n".format(time() - cstime))
 
     if not args.result:
-        FileHandler.write_mesh(objs, info, args.outputfile, args.output_type)
+        try:
+            FileHandler.write_mesh(objs, info, args.outputfile, args.output_type)
+        except FileNotFoundError:
+            print("File '{}' not found.".format(args.outputfile))
 
     # Success message
     if args.verbose:
-        print("Tweaking took:  \t{:2f} s".format(time()-stime))
+        print("Tweaking took:  \t{:2f} s".format(time() - stime))
         print("Successfully Rotated!")
