@@ -44,7 +44,7 @@ class Tweak:
         self.extended_mode = extended_mode
         self.show_progress = show_progress
         z_axis = -np.array([0, 0, 1], dtype=np.float64)
-        orientations = [[list(z_axis), 0.0]]
+        orientations = [[z_axis, 0.0]]
 
         # Preprocess the input mesh format.
         t_start = time()
@@ -79,7 +79,7 @@ class Tweak:
         # Calculate the unprintability for each orientation
         results = list()
         for side in orientations:
-            orientation = [float("{:6f}".format(-i)) for i in side[0]]
+            orientation = -1 * np.array(side[0], dtype=np.float64)
 
             mesh = self.project_verteces(mesh, orientation)
             bottom, overhang, contour = self.calc_overhang(mesh, orientation, min_volume=min_volume)
@@ -92,7 +92,6 @@ class Tweak:
                       % (str(np.around(orientation, decimals=4)),
                          round(bottom, 3), round(overhang, 3), round(contour, 3),
                          round(unprintability, 2)))
-
         t_lit = time()
         progress = self.print_progress(progress)
 
@@ -172,7 +171,7 @@ class Tweak:
         face_count = len(mesh)
         
         # append columns with a_min, area_size
-        addendum = np.zeros((face_count, 2, 3))
+        addendum = np.zeros((face_count, 2, 3), dtype=np.float64)
         addendum[:, 0, 0] = mesh[:, 1, 2]
         addendum[:, 0, 1] = mesh[:, 2, 2]
         addendum[:, 0, 2] = mesh[:, 3, 2]
@@ -192,7 +191,7 @@ class Tweak:
         mesh[:, 5, 0] = mesh[:, 5, 0]/2  # halfed because areas are triangle and no paralellograms
         
         # remove small facets (these are essential for countour calculation)
-        if NEGL_FACE_SIZE > 0:  # TODO remove facets smaller than a relative proportion of the total size
+        if NEGL_FACE_SIZE > 0:
             negl_size = [0.1*x if self.extended_mode else x for x in [NEGL_FACE_SIZE]][0]
             filtered_mesh = mesh[mesh[:, 5, 0] > negl_size]
             if len(filtered_mesh) > 100:
@@ -222,8 +221,8 @@ class Tweak:
         else:
             raise AttributeError("Could not parse input: favored side")
 
-        norm = np.sqrt(np.sum(np.array([x, y, z])**2))
-        side = np.array([x, y, z])/norm
+        norm = np.sqrt(np.sum(np.array([x, y, z], dtype=np.float64)**2))
+        side = np.array([x, y, z], dtype=np.float64)/norm
 
         print("You favour the side {} with a factor of {}".format(
             side, f))
@@ -464,10 +463,10 @@ class Tweak:
             phi = float("{:2f}".format(np.pi - np.arccos(-bestside[0][2])))
             rotation_axis = [-bestside[0][1], bestside[0][0], 0]
             rotation_axis = [i / np.sum(np.power(rotation_axis, 2), axis=-1)**0.5 for i in rotation_axis]
-            rotation_axis = np.array([float("{:2f}".format(i)) for i in rotation_axis])
+            rotation_axis = np.array([float("{:2f}".format(i)) for i in rotation_axis], np.float64)
 
         v = rotation_axis
-        rotational_matrix = [[v[0] * v[0] * (1 - math.cos(phi)) + math.cos(phi),
+        rotational_matrix = np.array([[v[0] * v[0] * (1 - math.cos(phi)) + math.cos(phi),
                               v[0] * v[1] * (1 - math.cos(phi)) - v[2] * math.sin(phi),
                               v[0] * v[2] * (1 - math.cos(phi)) + v[1] * math.sin(phi)],
                              [v[1] * v[0] * (1 - math.cos(phi)) + v[2] * math.sin(phi),
@@ -475,8 +474,7 @@ class Tweak:
                               v[1] * v[2] * (1 - math.cos(phi)) - v[0] * math.sin(phi)],
                              [v[2] * v[0] * (1 - math.cos(phi)) - v[1] * math.sin(phi),
                               v[2] * v[1] * (1 - math.cos(phi)) + v[0] * math.sin(phi),
-                              v[2] * v[2] * (1 - math.cos(phi)) + math.cos(phi)]]
-        rotational_matrix = np.around(rotational_matrix, decimals=6)
-
+                              v[2] * v[2] * (1 - math.cos(phi)) + math.cos(phi)]], dtype=np.float64)
+        #rotational_matrix = np.around(rotational_matrix, decimals=6)
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return rotation_axis, phi, rotational_matrix
