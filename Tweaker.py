@@ -58,7 +58,7 @@ def getargs():
             return None
 
     if arguments.output_type:
-        print(arguments.output_type)
+        # print(arguments.output_type)
         if "3mf" in arguments.output_type.lower():
             filetype = "3mf"
         elif "asci" in arguments.output_type.lower():
@@ -71,7 +71,7 @@ def getargs():
         else:
             filetype = "binarystl"
     arguments.output_type = filetype
-    print("Tweaker, arguments.output_type", arguments.output_type)
+    # print("Tweaker, arguments.output_type", arguments.output_type)
     if arguments.outputfile:
         filetype = arguments.outputfile.split(".")[-1].lower()
         if filetype not in ["stl", "3mf", "obj"]:
