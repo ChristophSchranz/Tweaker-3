@@ -164,7 +164,6 @@ class FileHandler:
         tweaked += list(map(self.write_facett, list(rotated_content)))
         tweaked.append("\nendsolid %s\n" % filename)
         tweaked = "".join(tweaked)
-
         return tweaked
 
     def write_facett(self, facett):
@@ -201,7 +200,6 @@ class FileHandler:
         normals = np.cross(np.subtract(v1, v0), np.subtract(v2, v0)
                            ).reshape(int(len(rotated_content)), 1, 3)
         rotated_content = np.hstack((normals, rotated_content))
-
         # header = "Tweaked on {}".format(time.strftime("%a %d %b %Y %H:%M:%S")
         #                                 ).encode().ljust(79, b" ") + b"\n"
         # header = struct.pack("<I", int(len(content) / 3))  # list("solid %s" % filename)
