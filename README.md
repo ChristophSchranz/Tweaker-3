@@ -85,6 +85,8 @@ infos and benchmarks are provided.
 
 
 ## Donation
-If this project helps you reduce time to develop, you can give me a cup of coffee :) 
+
+Most of this code was developed in my spare time to provide a performant auto-rotation module to the open-source 3D printing community.
+If you like this project or it helps you to reduce time to develop, I would be very thankful about a cup of coffee :) 
 
 [![More coffee, more code](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RG7UBJMUNLMHN&source=url)
