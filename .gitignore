@@ -104,3 +104,4 @@ ENV/
 
 
 src/uploads/*
+__pycache__
