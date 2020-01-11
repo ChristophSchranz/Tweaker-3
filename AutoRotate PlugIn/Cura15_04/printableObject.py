@@ -214,8 +214,6 @@ class printableObject(object):
 
 		self.applyMatrix(numpy.matrix(TweakedObject.Matrix, numpy.float64))
 
-#		with open("C:\\Users\\Chris\\Desktop\\log.txt", "w") as f:
-#			f.write(str(self._originFilename)+ "\ntime needed: " + str(time.time()-st))
 		
 	def scaleUpTo(self, size):
 		vMin = self._transformedMin
