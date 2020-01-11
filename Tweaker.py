@@ -143,9 +143,9 @@ if __name__ == "__main__":
                 x = None
                 try:
                     import torch
-                    # if torch.cuda.is_available():
-                    #     x = Tweak_torch(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside,
-                    #                     args.volume)
+                    if torch.cuda.is_available():
+                        x = Tweak_torch(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside,
+                                        args.volume)
                 except ModuleNotFoundError:
                     print("Torch is not found")
                     pass

@@ -7,9 +7,10 @@ import os
 from collections import Counter
 # upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
+import torch
 
 # Constants used:
-VECTOR_TOL = 0.001  # To remove alignment duplicates, the vector tolerance is 
+VECTOR_TOL = 0.001  # To remove alignment duplicates, the vector tolerance is
 # used to distinguish two vectors.
 PLAFOND_ADV = 0.2  # Printing a plafond is known to be more effective than
 # very step overhangs. This value sets the advantage in %.
@@ -22,7 +23,7 @@ RELATIVE_F = 1  # overhang size, and bottom contour lenght to get a robust
 CONTOUR_F = 0.5  # value for the Unprintability
 
 
-class Tweak:
+class Tweak_torch:
     """ The Tweaker is an auto rotate class for 3D objects.
 
     The critical angle CA is a variable that can be set by the operator as
@@ -41,6 +42,7 @@ class Tweak:
 
     def __init__(self, content, extended_mode=False, verbose=True,
                  show_progress=False, favside=None, min_volume=False):
+        self.device = torch.device("cuda")  # a CUDA device object
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -60,7 +62,7 @@ class Tweak:
         progress = self.print_progress(progress)
 
         # Searching promising orientations:
-        orientations += self.area_cumulation(mesh, 10)
+        orientations += self.area_cumulation(mesh, best_n=12)
 
         t_areacum = time()
         progress = self.print_progress(progress)
@@ -74,13 +76,17 @@ class Tweak:
             print("  %-26s %-10s%-10s%-10s%-10s " %
                   ("Alignment:", "Bottom:", "Overhang:", "Contour:", "Unpr.:"))
 
+        mesh =
         t_ds = time()
         progress = self.print_progress(progress)
 
         # Calculate the unprintability for each orientation
         results = list()
         for side in orientations:
-            orientation = -1 * np.array(side[0], dtype=np.float64)
+            # orientation = -1 * np.array(side[0], dtype=np.float64)
+            orientation = -1 * torch.tensor(side[0], device=self.device)
+            print(orientation)
+
 
             mesh = self.project_verteces(mesh, orientation)
             bottom, overhang, contour = self.calc_overhang(mesh, orientation, min_volume=min_volume)
@@ -251,17 +257,15 @@ class Tweak:
         Returns:
             list of the common orientation-tuples.
         """
-        if not self.extended_mode:  # instead of 10
-            best_n = 7
-
         alignments = mesh[:, 0, :]
         orient = Counter()
         for index in range(len(mesh)):  # Accumulate area-vectors
             orient[tuple(alignments[index])] += mesh[index, 5, 0]
 
-        top_n = orient.most_common(best_n)
+        top_n = orient.most_common(5*best_n)  # take more at first and then remove duplicates
         top_n = [[list(el[0]), float("{:2f}".format(el[1]))] for el in top_n]
         sleep(0)  # Yield, so other threads get a bit of breathing space.
+        top_n = self.remove_duplicates(top_n, best_n=best_n)
         return top_n
 
     def death_star(self, mesh, best_n):
@@ -327,7 +331,7 @@ class Tweak:
         v = [[list([float(j) for j in i]), 0] for i in v]
         return v
 
-    def remove_duplicates(self, old_orients):
+    def remove_duplicates(self, old_orients, best_n=-0):
         """Removing duplicate and similar orientations.
         Args:
             old_orients (list): list of faces
@@ -335,6 +339,8 @@ class Tweak:
             Unique orientations"""
         alpha = 5  # in degrees
         tol_angle = np.sin(alpha * np.pi / 180)
+        if best_n <= 0:
+            best_n = len(old_orients)
         orientations = list()
         for i in old_orients:
             duplicate = None
@@ -346,6 +352,8 @@ class Tweak:
                     break
             if duplicate is None:
                 orientations.append(i)
+                if len(orientations) == best_n:
+                    break
         return orientations
 
     def project_verteces(self, mesh, orientation):
