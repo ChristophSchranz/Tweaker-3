@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import math
+import sys
 from time import time, sleep
 import re
 import os
@@ -76,7 +77,9 @@ class Tweak_torch:
             print("  %-26s %-10s%-10s%-10s%-10s " %
                   ("Alignment:", "Bottom:", "Overhang:", "Contour:", "Unpr.:"))
 
-        mesh =
+        self.numpy_mesh = mesh
+        mesh = torch.from_numpy(mesh).to(device=self.device)
+
         t_ds = time()
         progress = self.print_progress(progress)
 
@@ -85,10 +88,11 @@ class Tweak_torch:
         for side in orientations:
             # orientation = -1 * np.array(side[0], dtype=np.float64)
             orientation = -1 * torch.tensor(side[0], device=self.device)
-            print(orientation)
-
 
             mesh = self.project_verteces(mesh, orientation)
+            # orientation = -1 * np.array(side[0], dtype=np.float64)
+            # mesh = numpy_mesh
+
             bottom, overhang, contour = self.calc_overhang(mesh, orientation, min_volume=min_volume)
             unprintability = self.target_function(bottom, overhang, contour, min_volume=min_volume)
             # results = np.vstack((results, [orientation, bottom,
@@ -360,17 +364,31 @@ class Tweak_torch:
         """Supplement the mesh array with scalars (max and median)
         for each face projected onto the orientation vector.
         Args:
-            mesh (np.array): with format face_count x 6 x 3.
-            orientation (np.array): with format 3 x 3.
+            mesh (torch.tensor): with format face_count x 6 x 3.
+            orientation (torch.tensor): with format 3 x 3.
         Returns:
             adjusted mesh.
         """
-        mesh[:, 4, 0] = np.inner(mesh[:, 1, :], orientation)
-        mesh[:, 4, 1] = np.inner(mesh[:, 2, :], orientation)
-        mesh[:, 4, 2] = np.inner(mesh[:, 3, :], orientation)
+        print(mesh.shape)
+        print(mesh[0])
+        print(orientation.t().shape)
+        print(orientation)
+        print("True value: ", np.inner(mesh[:, 1, :].cpu(), orientation.cpu()))
+        print("True value: ", np.inner(mesh[:, 2, :].cpu(), orientation.cpu()))
+        print("True value: ", np.inner(mesh[:, 3, :].cpu(), orientation.cpu()))
 
-        mesh[:, 5, 1] = np.max(mesh[:, 4, :], axis=1)
-        mesh[:, 5, 2] = np.median(mesh[:, 4, :], axis=1)
+        # mesh[:, 4, :] = torch.rand(mesh.shape[0], mesh.shape[2])
+        print("In torch: ", (mesh[:, 1:4, :] * orientation)[:, :, 2])
+        print("In torch: ", (mesh[:, 1:4, :] * orientation)[:, :, 2].shape)
+
+        #print("In torch: ", mesh[:, 1:4, :] * orientation)
+        mesh[:, 4, 0:3] = (mesh[:, 1:4, :] * orientation)[:, :, 2]
+        # mesh[:, 4, 0] = mesh[:, 1, :] * orientation
+        # mesh[:, 4, 1] = mesh[:, 2, :].dot(orientation)
+        # mesh[:, 4, 2] = mesh[:, 3, :].dot(orientation)
+
+        mesh[:, 5, 1] = mesh[:, 4, :].max(axis=1).values
+        mesh[:, 5, 2] = mesh[:, 4, :].median(axis=1).values
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return mesh
 
@@ -378,15 +396,17 @@ class Tweak_torch:
         """Calculating bottom and overhang area for a mesh regarding
         the vector n.
         Args:
-            mesh (np.array): with format face_count x 6 x 3.
-            orientation (np.array): with format 3 x 3.
+            mesh (torch.tensor): with format face_count x 6 x 3.
+            orientation (torch.tensor): with format 1 x 3.
             min_volume (bool): minimize the support material volume or supported surfaces
         Returns:
             the total bottom size, overhang size and contour length of the mesh
         """
+        print("\nOrientation: ", orientation)
+
         ascent = np.cos(120 * np.pi / 180)
-        anti_orient = -np.array(orientation)
-        total_min = np.amin(mesh[:, 4, :])
+        anti_orient = -1 * orientation
+        total_min = mesh[:, 4, :].min()
 
         # filter bottom area
         bottoms = mesh[mesh[:, 5, 1] < total_min + FIRST_LAY_H]
@@ -396,7 +416,9 @@ class Tweak_torch:
             bottom = 0
 
         # filter overhangs
-        overhangs = mesh[np.inner(mesh[:, 0, :], orientation) < ascent]
+        # print("overhangs: ", np.inner(self.numpy_mesh[:, 0, :], np.array(orientation.cpu())))
+        overhangs = mesh[(mesh[:, 0, :] * orientation)[:, 2] < ascent]
+
         overhangs = overhangs[overhangs[:, 5, 1] > (total_min + FIRST_LAY_H)]
 
         if self.extended_mode:
@@ -411,17 +433,30 @@ class Tweak_torch:
         if len(overhangs) > 0:
             if min_volume:
                 centers = overhangs[:, 1:4, :].sum(axis=1) / 3
-                heigths = np.inner(centers[:], orientation) - total_min
+                heights = (centers * orientation)[:, 2] - total_min
 
-                overhang = np.sum(heigths *
+                overhang = np.sum(heights *
                                   (np.amax((np.zeros(len(overhangs)) + 0.5,
                                             - np.inner(overhangs[:, 0, :], orientation)),
                                            axis=0) - 0.5) ** 2)
             else:
-                overhang = np.sum(overhangs[:, 5, 0] * 2 *
-                                  (np.amax((np.zeros(len(overhangs)) + 0.5,
-                                            - np.inner(overhangs[:, 0, :], orientation)),
+                # overhang = np.sum(overhangs[:, 5, 0] * 2 *
+                #                   (np.amax((torch.zeros(overhangs.shape[0]) + 0.5,
+                #                             (- overhangs[:, 0, :] * orientation)[:, 2].cpu()),
+                #                            axis=0) - 0.5) ** 2)
+                overhangs2 = np.array(overhangs.cpu())
+                orientation2 = orientation.cpu()
+                overhang = np.sum(overhangs2[:, 5, 0] * 2 *
+                                  (np.amax((np.zeros(len(overhangs2)) + 0.5,
+                                            - np.inner(overhangs2[:, 0, :], orientation2)),
                                            axis=0) - 0.5) ** 2)
+                print("\nOverhang: ", overhang)
+                print("\nOverhang: ", np.amax((np.zeros(len(overhangs2)) + 0.5,
+                                            - np.inner(overhangs2[:, 0, :], orientation2)),
+                                           axis=0)[:10])
+
+                overhang = (-overhangs[:, 0, :] * orientation)[:, 2]
+                print("\nOverhang: ", overhang[:10])
 
             overhang -= PLAFOND_ADV * plafond
 
@@ -450,6 +485,7 @@ class Tweak_torch:
             contour = 4 * np.sqrt(bottom)
 
         sleep(0)  # Yield, so other threads get a bit of breathing space.
+        sys.exit()
         return bottom, overhang, contour
 
     def print_progress(self, progress):
