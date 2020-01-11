@@ -60,7 +60,7 @@ class Tweak:
         progress = self.print_progress(progress)
 
         # Searching promising orientations:
-        orientations += self.area_cumulation(mesh, best_n=12)
+        orientations += self.area_cumulation(mesh, 10)
 
         t_areacum = time()
         progress = self.print_progress(progress)
@@ -251,15 +251,17 @@ class Tweak:
         Returns:
             list of the common orientation-tuples.
         """
+        if not self.extended_mode:  # instead of 10
+            best_n = 7
+
         alignments = mesh[:, 0, :]
         orient = Counter()
         for index in range(len(mesh)):  # Accumulate area-vectors
             orient[tuple(alignments[index])] += mesh[index, 5, 0]
 
-        top_n = orient.most_common(5*best_n)  # take more at first and then remove duplicates
+        top_n = orient.most_common(best_n)
         top_n = [[list(el[0]), float("{:2f}".format(el[1]))] for el in top_n]
         sleep(0)  # Yield, so other threads get a bit of breathing space.
-        top_n = self.remove_duplicates(top_n, best_n=best_n)
         return top_n
 
     def death_star(self, mesh, best_n):
@@ -325,7 +327,7 @@ class Tweak:
         v = [[list([float(j) for j in i]), 0] for i in v]
         return v
 
-    def remove_duplicates(self, old_orients, best_n=-0):
+    def remove_duplicates(self, old_orients):
         """Removing duplicate and similar orientations.
         Args:
             old_orients (list): list of faces
@@ -333,8 +335,6 @@ class Tweak:
             Unique orientations"""
         alpha = 5  # in degrees
         tol_angle = np.sin(alpha * np.pi / 180)
-        if best_n <= 0:
-            best_n = len(old_orients)
         orientations = list()
         for i in old_orients:
             duplicate = None
@@ -346,8 +346,6 @@ class Tweak:
                     break
             if duplicate is None:
                 orientations.append(i)
-                if len(orientations) == best_n:
-                    break
         return orientations
 
     def project_verteces(self, mesh, orientation):

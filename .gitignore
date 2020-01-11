@@ -105,3 +105,4 @@ ENV/
 
 src/uploads/*
 __pycache__
+*_tweaked.*

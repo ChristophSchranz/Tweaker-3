@@ -6,12 +6,13 @@ import argparse
 import os
 from time import time
 from MeshTweaker import Tweak
+from MeshTweaker_torch import Tweak_torch
 import FileHandler
 
 # You can preset the default model in line 42
 
 __author__ = "Christoph Schranz, Salzburg Research"
-__version__ = "3.8"
+__version__ = "3.9"
 
 
 def getargs():
@@ -139,7 +140,18 @@ if __name__ == "__main__":
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
+                x = None
+                try:
+                    import torch
+                    # if torch.cuda.is_available():
+                    #     x = Tweak_torch(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside,
+                    #                     args.volume)
+                except ModuleNotFoundError:
+                    print("Torch is not found")
+                    pass
+                finally:
+                    if x is None:
+                       x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
                 info[part]["matrix"] = x.matrix
                 info[part]["tweaker_stats"] = x
             except (KeyboardInterrupt, SystemExit):
