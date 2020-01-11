@@ -4,7 +4,7 @@
 
 Although there are Plugins for older versions of Cura in this directory, it is 
 **recommended to use the *Auto Orientation* Plugin that is 
-available within Cura's UI under Marketplace - Plugins.**
+available within Cura's UI under Marketplace rsp. Plugins.**
 
 Then, the Plugin can be used in the Extensions Tab.
 
