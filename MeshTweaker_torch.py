@@ -381,7 +381,7 @@ class Tweak_torch:
         print("In torch: ", (mesh[:, 1:4, :] * orientation)[:, :, 2])
         print("In torch: ", (mesh[:, 1:4, :] * orientation)[:, :, 2].shape)
 
-        #print("In torch: ", mesh[:, 1:4, :] * orientation)
+        # print("In torch: ", mesh[:, 1:4, :] * orientation)
         mesh[:, 4, 0:3] = (mesh[:, 1:4, :] * orientation)[:, :, 2]
         # mesh[:, 4, 0] = mesh[:, 1, :] * orientation
         # mesh[:, 4, 1] = mesh[:, 2, :].dot(orientation)

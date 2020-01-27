@@ -26,7 +26,7 @@ class FileHandler:
                     objs = self.load_ascii_stl(f)
                 except UnicodeDecodeError:
                     # if len(objs[0]["mesh"]) < 3:
-                    f.seek(5, os.SEEK_SET)
+                    f.seek(5, os.SEEK_SET)  # Why is this line here, when it works in line 32 without that?
                     objs = self.load_binary_stl(f)
             else:
                 objs = self.load_binary_stl(f)
