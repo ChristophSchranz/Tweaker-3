@@ -21,13 +21,16 @@ class FileHandler:
         filetype = os.path.splitext(inputfile)[1].lower()
         if filetype == ".stl":
             f = open(inputfile, "rb")
+            if not f.readable():
+                raise Exception("File is not readable.")
             try:
                 if "solid" in str(f.read(5).lower()):
                     try:
                         f = open(inputfile, "r")
                         objs = self.load_ascii_stl(f)
                     except UnicodeDecodeError:
-                        # There are cases of binary STL with prefix 'solid'
+                        # There are cases of binary STL with prefix 'solid', reopen file
+                        f = open(inputfile, "rb")
                         f.seek(5, os.SEEK_SET)
                         objs = self.load_binary_stl(f)
                 else:
