@@ -18,7 +18,7 @@ def getargs():
     parser = argparse.ArgumentParser(description="Orientation tool for better 3D prints")
     parser.add_argument('-i', action="store",
                         dest="inputfile", help="select input file")
-    parser.add_argument('-o', action="store", dest="outputfile",
+    parser.add_argument('-o', action="store", dest="outputfile", type=str,
                         help="select output file. '_tweaked' is postfix by default")
     parser.add_argument('-vb', '--verbose', action="store_true", dest="verbose",
                         help="increase output verbosity", default=False)
@@ -73,10 +73,11 @@ def getargs():
     arguments.output_type = filetype
     # print("Tweaker, arguments.output_type", arguments.output_type)
     if arguments.outputfile:
+        print("arguments.outputfile: {}".format(arguments.outputfile))
         filetype = arguments.outputfile.split(".")[-1].lower()
         if filetype not in ["stl", "3mf", "obj"]:
             raise TypeError("Filetype not supported")
-        arguments.outputfile = "".join(arguments.outputfile.split(".")[:-1]) + "." + filetype
+        arguments.outputfile = ".".join(arguments.outputfile.split(".")[:-1]) + "." + filetype
         if not arguments.output_type:
             arguments.output_type = filetype
     else:
@@ -164,7 +165,7 @@ if __name__ == "__main__":
         try:
             FileHandler.write_mesh(objs, info, args.outputfile, args.output_type)
         except FileNotFoundError:
-            print("File '{}' not found.".format(args.outputfile))
+            raise FileNotFoundError("Output File '{}' not found.".format(args.outputfile))
 
     # Success message
     if args.verbose:

@@ -49,7 +49,7 @@ The file may be corrupt, please check if the file can be opened with ofter softw
 If it is readable by other software, you can help to improve this software by 
 opening a github issue and attaching the file.
 Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_trace))
-                sys.exit(1)
+                raise Exception("File is not readable.")
 
         elif filetype == ".3mf":
             object = ThreeMF.Read3mf(inputfile)  # TODO not implemented
@@ -142,7 +142,7 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
                 if len(objects.keys()) == 1:
                     outname = outputfile
                 else:
-                    outname = "".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
+                    outname = ".".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
                 with open(outname, 'w') as outfile:
                     outfile.write(tweakedcontent)
 
@@ -155,9 +155,9 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
                 tweaked_array = self.rotate_bin_stl(info[part]["matrix"], mesh)
 
                 if len(objects.keys()) == 1:
-                    outname = "".join(outputfile.split(".")[:-1]) + ".stl"
+                    outname = outputfile
                 else:
-                    outname = "".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
+                    outname = ".".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
                 length = struct.pack("<I", int(len(mesh) / 3))
                 with open(outname, 'wb') as outfile:
                     outfile.write(bytearray(header + length + b"".join(tweaked_array)))
