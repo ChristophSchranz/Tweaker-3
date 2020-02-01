@@ -51,17 +51,16 @@ opening a github issue and attaching the file.
 Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_trace))
                 raise Exception("File is not readable.")
 
-        elif filetype == ".3mf":
-            object = ThreeMF.Read3mf(inputfile)  # TODO not implemented
-            # objs[0] = {"mesh": list(), "name": "binary file"}
-            objs = {0: {"mesh": object[0]["mesh"], "name": "3mf file"}}
+        # elif filetype == ".3mf":
+        #     object = ThreeMF.Read3mf(inputfile)  # TODO not implemented
+        #     # objs[0] = {"mesh": list(), "name": "binary file"}
+        #     objs = {0: {"mesh": object[0]["mesh"], "name": "3mf file"}}
         elif filetype == ".obj":
             f = open(inputfile, "rb")
             objs = self.load_obj(f)
 
         else:
-            print("File type is not supported.")
-            sys.exit()
+            raise Exception("File type is not supported.")
 
         return objs
 
