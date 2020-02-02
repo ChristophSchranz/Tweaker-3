@@ -79,7 +79,7 @@ There is a plugin for Cura 15.04 in the directory `AutoRotate Plugin/Cura15_04`.
 
 ### Cura 2, 3 and 4
 
-In recent versions of Cura, the **Tweaker-3** is available as **Auto-Orientation** in the *Marketplace* respectively the *plugin manager*.
+In recent versions of Cura, the **Tweaker-3** is available as **Auto-Orientation**-Plugin in the *Marketplace* (Cura >= 4) respectively the *plugin manager*.
 
 ### OctoPrint
 
@@ -98,7 +98,6 @@ as described in this [PrePrintService-repository](https://github.com/ChristophSc
 This [Whitepaper](https://www.researchgate.net/publication/311765131_Tweaker_-_Auto_Rotation_Module_for_FDM_3D_Printing) 
 declares this program. Additionally, background 
 infos and benchmarks are provided.
-
 
 ## Donation
 
