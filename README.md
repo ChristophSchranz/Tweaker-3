@@ -79,7 +79,7 @@ There is a plugin for Cura 15.04 in the directory `AutoRotate Plugin/Cura15_04`.
 
 ### Cura 2, 3 and 4
 
-In recent versions of Cura, the **Tweaker-3** is available as **Auto-Orientation**-Plugin in the *Marketplace* (Cura >= 4) respectively the *plugin manager*.
+In recent versions of Cura, the **Tweaker-3** is available as **Auto-Orientation** - plugin in the *Marketplace* (Cura >= 4) respectively the *plugin manager*. The plugin's source can be found [here](https://github.com/nallath/CuraOrientationPlugin).
 
 ### OctoPrint
 
