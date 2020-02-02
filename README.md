@@ -55,8 +55,8 @@ You can choose the output types "asciistl" and
 In some cases the smoothness of one side's surface 
 may be more important. Therefore, orientations closer than 
 45 degrees to a vector can be weighted. The use of the 
-extended mode -x is also recommeded. Here is an example 
-of how to favour the side x,y,z=0,-1,2.5 with a factor 
+extended mode -x is also recommended. Here is an example 
+of how to favour the side x,y,z=0,-1,2.5 with a weighting factor 
 of 3:
 
 `python Tweaker.py -i demo_object.stl -vb -x -fs "[[0,-1,2.5],3]"`
@@ -70,11 +70,27 @@ of 3:
 
 `python Tweaker.py -v`
 
-## Cura Plugin:
 
-Cura 15 and Cura 2.3 are supported. Installation infos 
-are in the PlugIn folder, or you can also download the 
-PlugIn from Cura 2.7 PlugIn Browser.
+## Plugins:
+
+### Cura 15
+
+There is a plugin for Cura 15.04 in the directory `AutoRotate Plugin/Cura15_04`. This version of Cura, however, is outdated and later versions are recommended.
+
+### Cura 2, 3 and 4
+
+In recent versions of Cura, the **Tweaker-3** is available as **Auto-Orientation** in the *Marketplace* respectively the *plugin manager*.
+
+### OctoPrint
+
+The **Tweaker-3** is available as **PrePrint-Service** in OctoPrint and can be installed as described in this 
+[instruction](https://plugins.octoprint.org/plugins/preprintservice/). 
+Note that this module combines the auto-rotation functionality with slicing in an external Docker service.
+
+### Webservice
+
+Another way to test the functionality of the **Tweaker-3** is the usage of a Docker-based web service
+as described in this [PrePrintService-repository](https://github.com/ChristophSchranz/Pre-Print-Service).
 
 
 ## Interested in how the algorithm works?
