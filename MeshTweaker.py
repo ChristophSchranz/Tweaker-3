@@ -8,18 +8,18 @@ from collections import Counter
 # upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
 
-# Constants used:
-VECTOR_TOL = 0.001  # To remove alignment duplicates, the vector tolerance is 
-# used to distinguish two vectors.
-PLAFOND_ADV = 0.2  # Printing a plafond is known to be more effective than
-# very step overhangs. This value sets the advantage in %.
-FIRST_LAY_H = 0.25  # The initial layer of a print has an altitude > 0
-# bottom layer and very bottom-near overhangs can be handled as similar.
-NEGL_FACE_SIZE = 1  # The fast operation mode neglects facet sizes smaller than
-# this value (in mm^2) for a better performance
-ABSOLUTE_F = 100  # These values scale the the parameters bottom size,
-RELATIVE_F = 1  # overhang size, and bottom contour lenght to get a robust
-CONTOUR_F = 0.5  # value for the Unprintability
+# # Constants used:
+# self.VECTOR_TOL = 0.001  # To remove alignment duplicates, the vector tolerance is
+# # used to distinguish two vectors.
+# PLAFOND_ADV = 0.2  # Printing a plafond is known to be more effective than
+# # very step overhangs. This value sets the advantage in %.
+# self.FIRST_LAY_H = 0.25  # The initial layer of a print has an altitude > 0
+# # bottom layer and very bottom-near overhangs can be handled as similar.
+# self.NEGL_FACE_SIZE = 1  # The fast operation mode neglects facet sizes smaller than
+# # this value (in mm^2) for a better performance
+# ABSOLUTE_F = 100  # These values scale the the parameters bottom size,
+# RELATIVE_F = 1  # overhang size, and bottom contour lenght to get a robust
+# CONTOUR_F = 0.5  # value for the Unprintability
 
 
 class Tweak:
@@ -40,7 +40,14 @@ class Tweak:
         """
 
     def __init__(self, content, extended_mode=False, verbose=True,
-                 show_progress=False, favside=None, min_volume=False):
+                 show_progress=False, favside=None, min_volume=False, **parameter):
+        self.VECTOR_TOL = parameter["VECTOR_TOL"]
+        self.PLAFOND_ADV = parameter["PLAFOND_ADV"]
+        self.FIRST_LAY_H = parameter["FIRST_LAY_H"]
+        self.NEGL_FACE_SIZE = parameter["NEGL_FACE_SIZE"]
+        self.ABSOLUTE_F = parameter["ABSOLUTE_F"]
+        self.RELATIVE_F = parameter["RELATIVE_F"]
+        self.CONTOUR_F = parameter["CONTOUR_F"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -98,7 +105,7 @@ class Tweak:
 
         # evaluate the best 5 alignments and calculate the rotation parameters
         results = np.array(results)
-        best_5_results = results[results[:, 4].argsort()[:5]]
+        best_5_results = results[results[:, 4].argsort()]
         best_5_results = list(best_5_results)
 
         for i, align in enumerate(best_5_results):
@@ -145,12 +152,12 @@ class Tweak:
             a value for the unprintability. The smaller, the better."""
         if min_volume:  # minimize the volume of support material
             overhang /= 5  # a volume is of higher dimension, so the overhang have to be reduced
-            unprintability = (overhang / ABSOLUTE_F
-                              + (overhang + 1) / (1 + CONTOUR_F * contour + bottom) / RELATIVE_F)
+            unprintability = (overhang / self.ABSOLUTE_F
+                              + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
 
         else:  # minimize supported sufaces
-            unprintability = (overhang / ABSOLUTE_F
-                              + (overhang + 1) / (1 + CONTOUR_F * contour + bottom) / RELATIVE_F)
+            unprintability = (overhang / self.ABSOLUTE_F
+                              + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
         return round(unprintability, 6)
 
     def preprocess(self, content):
@@ -196,8 +203,8 @@ class Tweak:
         mesh[:, 5, 0] = mesh[:, 5, 0] / 2  # halfed because areas are triangle and no paralellograms
 
         # remove small facets (these are essential for countour calculation)
-        if NEGL_FACE_SIZE > 0:
-            negl_size = [0.1 * x if self.extended_mode else x for x in [NEGL_FACE_SIZE]][0]
+        if self.NEGL_FACE_SIZE > 0:
+            negl_size = [0.1 * x if self.extended_mode else x for x in [self.NEGL_FACE_SIZE]][0]
             filtered_mesh = mesh[mesh[:, 5, 0] > negl_size]
             if len(filtered_mesh) > 100:
                 mesh = filtered_mesh
@@ -381,7 +388,7 @@ class Tweak:
         total_min = np.amin(mesh[:, 4, :])
 
         # filter bottom area
-        bottoms = mesh[mesh[:, 5, 1] < total_min + FIRST_LAY_H]
+        bottoms = mesh[mesh[:, 5, 1] < total_min + self.FIRST_LAY_H]
         if len(bottoms) > 0:
             bottom = np.sum(bottoms[:, 5, 0])
         else:
@@ -389,7 +396,7 @@ class Tweak:
 
         # filter overhangs
         overhangs = mesh[np.inner(mesh[:, 0, :], orientation) < ascent]
-        overhangs = overhangs[overhangs[:, 5, 1] > (total_min + FIRST_LAY_H)]
+        overhangs = overhangs[overhangs[:, 5, 1] > (total_min + self.FIRST_LAY_H)]
 
         if self.extended_mode:
             plafonds = overhangs[(overhangs[:, 0, :] == anti_orient).all(axis=1)]
@@ -415,15 +422,15 @@ class Tweak:
                                             - np.inner(overhangs[:, 0, :], orientation)),
                                            axis=0) - 0.5) ** 2)
 
-            overhang -= PLAFOND_ADV * plafond
+            overhang -= self.PLAFOND_ADV * plafond
 
         else:
             overhang = 0
 
         # filter the total length of the bottom area's contour
         if self.extended_mode:
-            # contours = mesh[total_min+FIRST_LAY_H < mesh[:, 5, 1]]
-            contours = mesh[mesh[:, 5, 2] < total_min + FIRST_LAY_H]
+            # contours = mesh[total_min+self.FIRST_LAY_H < mesh[:, 5, 1]]
+            contours = mesh[mesh[:, 5, 2] < total_min + self.FIRST_LAY_H]
 
             if len(contours) > 0:
                 conlen = np.arange(len(contours))
@@ -459,10 +466,10 @@ class Tweak:
         Returns:
             rotation axis, rotation angle, rotational matrix.
         """
-        if np.allclose(bestside[0], np.array([0, 0, -1]), atol=VECTOR_TOL):
+        if np.allclose(bestside[0], np.array([0, 0, -1]), atol=self.VECTOR_TOL):
             rotation_axis = [1, 0, 0]
             phi = np.pi
-        elif np.allclose(bestside[0], np.array([0, 0, 1]), atol=VECTOR_TOL):
+        elif np.allclose(bestside[0], np.array([0, 0, 1]), atol=self.VECTOR_TOL):
             rotation_axis = [1, 0, 0]
             phi = 0
         else:

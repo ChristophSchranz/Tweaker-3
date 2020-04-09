@@ -5,14 +5,21 @@ import sys
 import argparse
 import os
 from time import time
-from MeshTweaker import Tweak
-import FileHandler
+
+if __name__ == '__main__':
+    from MeshTweaker import Tweak
+    import FileHandler
+else:
+    from .MeshTweaker import Tweak
+    from . import FileHandler
 
 # You can preset the default model in line 42
 
 __author__ = "Christoph Schranz, Salzburg Research"
 __version__ = "3.8"
 
+parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, "NEGL_FACE_SIZE": 1,
+                  "ABSOLUTE_F": 100, "RELATIVE_F": 1, "CONTOUR_F": 0.5})
 
 def getargs():
     parser = argparse.ArgumentParser(description="Orientation tool for better 3D prints")
@@ -139,7 +146,8 @@ if __name__ == "__main__":
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
+                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume,
+                          **parameter)
                 info[part]["matrix"] = x.matrix
                 info[part]["tweaker_stats"] = x
             except (KeyboardInterrupt, SystemExit):
