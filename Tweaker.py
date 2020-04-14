@@ -20,6 +20,15 @@ __version__ = "3.8"
 
 parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, "NEGL_FACE_SIZE": 1,
                   "ABSOLUTE_F": 100, "RELATIVE_F": 1, "CONTOUR_F": 0.5})
+# Best from 20200413 [0.001451, 0.291153, 0.028855, 1.400084, 669.452018, 1.566669, 0.088707]
+
+# parametrize target_function
+# angle
+# constant in line: align = np.sum(diff * diff, axis=1) < 0.7654
+# ascent in line: ascent = np.cos(120 * np.pi / 180)
+# add non-linearity in: plafond = np.sum(plafonds[:, 5, 0])
+# and: bottom = np.sum(bottoms[:, 5, 0])
+
 
 def getargs():
     parser = argparse.ArgumentParser(description="Orientation tool for better 3D prints")

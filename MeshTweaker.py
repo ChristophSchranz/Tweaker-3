@@ -8,6 +8,7 @@ from collections import Counter
 # upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
 
+
 # # Constants used:
 # self.VECTOR_TOL = 0.001  # To remove alignment duplicates, the vector tolerance is
 # # used to distinguish two vectors.
@@ -18,7 +19,7 @@ import numpy as np
 # self.NEGL_FACE_SIZE = 1  # The fast operation mode neglects facet sizes smaller than
 # # this value (in mm^2) for a better performance
 # ABSOLUTE_F = 100  # These values scale the the parameters bottom size,
-# RELATIVE_F = 1  # overhang size, and bottom contour lenght to get a robust
+# RELATIVE_F = 1  # overhang size, and bottom contour length to get a robust
 # CONTOUR_F = 0.5  # value for the Unprintability
 
 
@@ -59,20 +60,20 @@ class Tweak:
         progress = 0  # progress in percent of tweaking
         progress = self.print_progress(progress)
 
-        mesh = self.preprocess(content)
+        self.mesh = self.preprocess(content)
 
         if favside:
-            mesh = self.favour_side(mesh, favside)
+            self.favour_side(favside)
         t_pre = time()
         progress = self.print_progress(progress)
 
         # Searching promising orientations:
-        orientations += self.area_cumulation(mesh, 10)
+        orientations += self.area_cumulation(10)
 
         t_areacum = time()
         progress = self.print_progress(progress)
         if extended_mode:
-            orientations += self.death_star(mesh, 8)
+            orientations += self.death_star(12)
             orientations += self.add_supplements()
             orientations = self.remove_duplicates(orientations)
 
@@ -89,8 +90,8 @@ class Tweak:
         for side in orientations:
             orientation = -1 * np.array(side[0], dtype=np.float64)
 
-            mesh = self.project_verteces(mesh, orientation)
-            bottom, overhang, contour = self.calc_overhang(mesh, orientation, min_volume=min_volume)
+            self.project_verteces(orientation)
+            bottom, overhang, contour = self.calc_overhang(orientation, min_volume=min_volume)
             unprintability = self.target_function(bottom, overhang, contour, min_volume=min_volume)
             # results = np.vstack((results, [orientation, bottom,
             #                                overhang, contour, unprintability]))
@@ -136,13 +137,13 @@ class Tweak:
             self.unprintability = best_5_results[0][4]
             self.best_5 = best_5_results
 
-        # It'd be nice to finish with a nice clean newline, as print_progress rewrites updates without advancing below...
+        # Finish with a nice clean newline, as print_progress rewrites updates without advancing below.
         if show_progress:
             print("\n")
 
     def target_function(self, bottom, overhang, contour, min_volume):
         """This function returns the Unprintability for a given set of bottom
-        overhang area and bottom contour lenght, based on an ordinal scale.
+        overhang area and bottom contour length, based on an ordinal scale.
         Args:
             bottom (float): bottom area size.
             overhang (float): overhanging area size.
@@ -200,9 +201,9 @@ class Tweak:
 
         # normalise area vector and correct area size
         mesh[:, 0, :] = mesh[:, 0, :] / mesh[:, 5, 0].reshape(face_count, 1)
-        mesh[:, 5, 0] = mesh[:, 5, 0] / 2  # halfed because areas are triangle and no paralellograms
+        mesh[:, 5, 0] = mesh[:, 5, 0] / 2  # halved because areas are triangle and no parallelograms
 
-        # remove small facets (these are essential for countour calculation)
+        # remove small facets (these are essential for contour calculation)
         if self.NEGL_FACE_SIZE > 0:
             negl_size = [0.1 * x if self.extended_mode else x for x in [self.NEGL_FACE_SIZE]][0]
             filtered_mesh = mesh[mesh[:, 5, 0] > negl_size]
@@ -212,11 +213,10 @@ class Tweak:
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return mesh
 
-    def favour_side(self, mesh, favside):
+    def favour_side(self, favside):
         """This function weights the size of orientations closer than 45 deg
         to a favoured side higher.
         Args:
-            mesh (np.array): with format face_count x 6 x 3.
             favside (string): the favoured side  "[[0,-1,2.5],3]"
         Returns:
             a weighted mesh or the original mesh in case of invalid input
@@ -239,55 +239,52 @@ class Tweak:
         print("You favour the side {} with a factor of {}".format(
             side, f))
 
-        diff = np.subtract(mesh[:, 0, :], side)
+        diff = np.subtract(self.mesh[:, 0, :], side)
         align = np.sum(diff * diff, axis=1) < 0.7654
-        mesh_not_align = mesh[np.logical_not(align)]
-        mesh_align = mesh[align]
+        mesh_not_align = self.mesh[np.logical_not(align)]
+        mesh_align = self.mesh[align]
         mesh_align[:, 5, 0] = f * mesh_align[:, 5, 0]  # weight aligning orientations
 
-        mesh = np.concatenate((mesh_not_align, mesh_align), axis=0)
-        return mesh
+        self.mesh = np.concatenate((mesh_not_align, mesh_align), axis=0)
 
-    def area_cumulation(self, mesh, best_n):
+    def area_cumulation(self, best_n):
         """
         Gathering promising alignments by the accumulation of
         the magnitude of parallel area vectors.
         Args:
-            mesh (np.array): with format face_count x 6 x 3.
             best_n (int): amount of orientations to return.
         Returns:
             list of the common orientation-tuples.
         """
-        if not self.extended_mode:  # instead of 10
-            best_n = 7
-
-        alignments = mesh[:, 0, :]
+        # if not self.extended_mode:  # instead of 10
+        #     best_n = 12
+        #
+        alignments = self.mesh[:, 0, :]
         orient = Counter()
-        for index in range(len(mesh)):  # Accumulate area-vectors
-            orient[tuple(alignments[index])] += mesh[index, 5, 0]
+        for index in range(len(self.mesh)):  # Accumulate area-vectors
+            orient[tuple(alignments[index])] += self.mesh[index, 5, 0]
 
         top_n = orient.most_common(best_n)
         top_n = [[list(el[0]), float("{:2f}".format(el[1]))] for el in top_n]
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return top_n
 
-    def death_star(self, mesh, best_n):
+    def death_star(self, best_n):
         """
         Creating random faces by adding a random vertex to an existing edge.
         Common orientations of these faces are promising orientations for
         placement.
         Args:
-            mesh (np.array): with format face_count x 6 x 3.
             best_n (int): amount of orientations to return.
         Returns:
             list of the common orientation-tuples.
         """
 
         # Small files need more calculations
-        mesh_len = len(mesh)
+        mesh_len = len(self.mesh)
         iterations = int(np.ceil(20000 / (mesh_len + 100)))
 
-        vertexes = mesh[:mesh_len, 1:4, :]
+        vertexes = self.mesh[:mesh_len, 1:4, :]
         orientations = list()
         for i in range(iterations):
             two_vertexes = vertexes[:, np.random.choice(3, 2, replace=False)]
@@ -321,7 +318,8 @@ class Tweak:
         top_n += [[list((-v[0][0], -v[0][1], -v[0][2])), v[1]] for v in top_n]
         return top_n
 
-    def add_supplements(self):
+    @staticmethod
+    def add_supplements():
         """Supplement 18 additional vectors.
         Returns:
             Basic Orientation Field"""
@@ -334,7 +332,8 @@ class Tweak:
         v = [[list([float(j) for j in i]), 0] for i in v]
         return v
 
-    def remove_duplicates(self, old_orients):
+    @staticmethod
+    def remove_duplicates(old_orients):
         """Removing duplicate and similar orientations.
         Args:
             old_orients (list): list of faces
@@ -355,29 +354,26 @@ class Tweak:
                 orientations.append(i)
         return orientations
 
-    def project_verteces(self, mesh, orientation):
+    def project_verteces(self, orientation):
         """Supplement the mesh array with scalars (max and median)
         for each face projected onto the orientation vector.
         Args:
-            mesh (np.array): with format face_count x 6 x 3.
             orientation (np.array): with format 3 x 3.
         Returns:
             adjusted mesh.
         """
-        mesh[:, 4, 0] = np.inner(mesh[:, 1, :], orientation)
-        mesh[:, 4, 1] = np.inner(mesh[:, 2, :], orientation)
-        mesh[:, 4, 2] = np.inner(mesh[:, 3, :], orientation)
+        self.mesh[:, 4, 0] = np.inner(self.mesh[:, 1, :], orientation)
+        self.mesh[:, 4, 1] = np.inner(self.mesh[:, 2, :], orientation)
+        self.mesh[:, 4, 2] = np.inner(self.mesh[:, 3, :], orientation)
 
-        mesh[:, 5, 1] = np.max(mesh[:, 4, :], axis=1)
-        mesh[:, 5, 2] = np.median(mesh[:, 4, :], axis=1)
+        self.mesh[:, 5, 1] = np.max(self.mesh[:, 4, :], axis=1)
+        self.mesh[:, 5, 2] = np.median(self.mesh[:, 4, :], axis=1)
         sleep(0)  # Yield, so other threads get a bit of breathing space.
-        return mesh
 
-    def calc_overhang(self, mesh, orientation, min_volume):
+    def calc_overhang(self, orientation, min_volume):
         """Calculating bottom and overhang area for a mesh regarding
         the vector n.
         Args:
-            mesh (np.array): with format face_count x 6 x 3.
             orientation (np.array): with format 3 x 3.
             min_volume (bool): minimize the support material volume or supported surfaces
         Returns:
@@ -385,17 +381,17 @@ class Tweak:
         """
         ascent = np.cos(120 * np.pi / 180)
         anti_orient = -np.array(orientation)
-        total_min = np.amin(mesh[:, 4, :])
+        total_min = np.amin(self.mesh[:, 4, :])
 
         # filter bottom area
-        bottoms = mesh[mesh[:, 5, 1] < total_min + self.FIRST_LAY_H]
+        bottoms = self.mesh[self.mesh[:, 5, 1] < total_min + self.FIRST_LAY_H]
         if len(bottoms) > 0:
             bottom = np.sum(bottoms[:, 5, 0])
         else:
             bottom = 0
 
         # filter overhangs
-        overhangs = mesh[np.inner(mesh[:, 0, :], orientation) < ascent]
+        overhangs = self.mesh[np.inner(self.mesh[:, 0, :], orientation) < ascent]
         overhangs = overhangs[overhangs[:, 5, 1] > (total_min + self.FIRST_LAY_H)]
 
         if self.extended_mode:
@@ -429,8 +425,8 @@ class Tweak:
 
         # filter the total length of the bottom area's contour
         if self.extended_mode:
-            # contours = mesh[total_min+self.FIRST_LAY_H < mesh[:, 5, 1]]
-            contours = mesh[mesh[:, 5, 2] < total_min + self.FIRST_LAY_H]
+            # contours = self.mesh[total_min+self.FIRST_LAY_H < self.mesh[:, 5, 1]]
+            contours = self.mesh[self.mesh[:, 5, 2] < total_min + self.FIRST_LAY_H]
 
             if len(contours) > 0:
                 conlen = np.arange(len(contours))
@@ -480,14 +476,14 @@ class Tweak:
 
         v = rotation_axis
         rotational_matrix = np.array([[v[0] * v[0] * (1 - math.cos(phi)) + math.cos(phi),
-                              v[0] * v[1] * (1 - math.cos(phi)) - v[2] * math.sin(phi),
-                              v[0] * v[2] * (1 - math.cos(phi)) + v[1] * math.sin(phi)],
-                             [v[1] * v[0] * (1 - math.cos(phi)) + v[2] * math.sin(phi),
-                              v[1] * v[1] * (1 - math.cos(phi)) + math.cos(phi),
-                              v[1] * v[2] * (1 - math.cos(phi)) - v[0] * math.sin(phi)],
-                             [v[2] * v[0] * (1 - math.cos(phi)) - v[1] * math.sin(phi),
-                              v[2] * v[1] * (1 - math.cos(phi)) + v[0] * math.sin(phi),
-                              v[2] * v[2] * (1 - math.cos(phi)) + math.cos(phi)]], dtype=np.float64)
-        #rotational_matrix = np.around(rotational_matrix, decimals=6)
+                                       v[0] * v[1] * (1 - math.cos(phi)) - v[2] * math.sin(phi),
+                                       v[0] * v[2] * (1 - math.cos(phi)) + v[1] * math.sin(phi)],
+                                      [v[1] * v[0] * (1 - math.cos(phi)) + v[2] * math.sin(phi),
+                                       v[1] * v[1] * (1 - math.cos(phi)) + math.cos(phi),
+                                       v[1] * v[2] * (1 - math.cos(phi)) - v[0] * math.sin(phi)],
+                                      [v[2] * v[0] * (1 - math.cos(phi)) - v[1] * math.sin(phi),
+                                       v[2] * v[1] * (1 - math.cos(phi)) + v[0] * math.sin(phi),
+                                       v[2] * v[2] * (1 - math.cos(phi)) + math.cos(phi)]], dtype=np.float64)
+        # rotational_matrix = np.around(rotational_matrix, decimals=6)
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return rotation_axis, phi, rotational_matrix
