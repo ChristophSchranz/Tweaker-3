@@ -20,10 +20,10 @@ __version__ = "3.8"
 
 # parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, "NEGL_FACE_SIZE": 1,
 #                   "ABSOLUTE_F": 100, "RELATIVE_F": 1, "CONTOUR_F": 0.5})
-parameter_tuples = [("ABSOLUTE_F", 100.0), ("RELATIVE_F", 1.0), ("CONTOUR_F", 1.0), ("FIRST_LAY_H", 0.1),
-                    ("TAR_A", 1.0), ("TAR_B", 0.0), ("TAR_C", 1.0), ("TAR_D", 1.0), ("BOTTOM_F", 1),
-                    ("PLAFOND_ADV_A", 0.0), ("PLAFOND_ADV_B", 0.2), ("PLAFOND_ADV_C", 0.0),
-                    ("ANGLE_SCALE", 0.1), ("ASCENT", 0.1), ("NEGL_FACE_SIZE", 1.0), ("CONTOUR_AMOUNT", 0.0)]
+parameter_tuples = [("TAR_P1", 1.0), ("TAR_P2", 1.0), ("TAR_P3", 1.0), ("TAR_P4", 1.0), ("TAR_P5", 1.0),
+                    ("TAR_Q1", 1.0), ("TAR_Q2", 1.0), ("TAR_Q3", 1.0), ("TAR_Q4", 1.0), ("TAR_Q5", 1.0),("TAR_Q6", 1.0),
+                    ("PLAFOND_ADV_A", 0.01), ("PLAFOND_ADV_B", 0.2), ("PLAFOND_ADV_C", 0.01), ("FIRST_LAY_H", 0.1),
+                    ("ANGLE_SCALE", 0.1), ("ASCENT", 0.1), ("NEGL_FACE_SIZE", 1.0), ("CONTOUR_AMOUNT", 0.01)]
 parameter = dict(parameter_tuples)
 
 

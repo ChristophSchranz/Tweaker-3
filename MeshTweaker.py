@@ -46,21 +46,26 @@ class Tweak:
         self.VECTOR_TOL = 0.001  # parameter["VECTOR_TOL"] fixed
         self.FIRST_LAY_H = parameter["FIRST_LAY_H"]
         self.NEGL_FACE_SIZE = parameter["NEGL_FACE_SIZE"]
-        self.ABSOLUTE_F = parameter["ABSOLUTE_F"]
-        self.RELATIVE_F = parameter["RELATIVE_F"]
-        self.CONTOUR_F = parameter["CONTOUR_F"]
 
-        self.TAR_A = parameter["TAR_A"]
-        self.TAR_B = parameter["TAR_B"]
-        self.TAR_C = parameter["TAR_C"]
-        self.TAR_D = parameter["TAR_D"]
-        self.BOTTOM_F = parameter["BOTTOM_F"]
         self.PLAFOND_ADV_A = parameter["PLAFOND_ADV_A"]
         self.PLAFOND_ADV_B = parameter["PLAFOND_ADV_B"]
         self.PLAFOND_ADV_C = parameter["PLAFOND_ADV_C"]
+        self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
         self.ANGLE_SCALE = parameter["ANGLE_SCALE"]
         self.ASCENT = parameter["ASCENT"]
-        self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
+
+        # Rational target function in overhang, bottom, contour
+        self.TAR_P1 = parameter["TAR_P1"]
+        self.TAR_P2 = parameter["TAR_P2"]
+        self.TAR_P3 = parameter["TAR_P3"]
+        self.TAR_P4 = parameter["TAR_P4"]
+        self.TAR_P5 = parameter["TAR_P5"]
+        self.TAR_Q1 = parameter["TAR_Q1"]
+        self.TAR_Q2 = parameter["TAR_Q2"]
+        self.TAR_Q3 = parameter["TAR_Q3"]
+        self.TAR_Q4 = parameter["TAR_Q4"]
+        self.TAR_Q5 = parameter["TAR_Q5"]
+        self.TAR_Q6 = parameter["TAR_Q6"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -162,15 +167,21 @@ class Tweak:
         Returns:
             a value for the unprintability. The smaller, the better."""
         if min_volume:  # minimize the volume of support material
-            overhang /= 5  # a volume is of higher dimension, so the overhang have to be reduced
+            # a volume is of higher dimension, so the overhang have to be reduced. This solution might not suffice
+            overhang /= 5
+
         #     unprintability = (overhang / self.ABSOLUTE_F
         #                       + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) * self.RELATIVE_F)
         #
         # else:  # minimize supported surfaces
         # unprintability = (overhang / self.ABSOLUTE_F
         #                   + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
-        unprintability = self.TAR_A * ((overhang + self.TAR_B) / self.ABSOLUTE_F) + self.RELATIVE_F * \
-                         (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom)
+        # unprintability = self.ABSOLUTE_F * (overhang + self.TAR_B) + self.RELATIVE_F * \
+        #                  (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom)
+        unprintability = (self.TAR_P1 + self.TAR_P2 * overhang + self.TAR_P3 * overhang**2 +
+                          self.TAR_P4 * bottom + self.TAR_P5 * contour)
+        unprintability /= (self.TAR_Q1 + self.TAR_Q2 * bottom + self.TAR_Q3 * bottom**2 +
+                           self.TAR_Q4 * contour + self.TAR_Q5 * contour**2 + self.TAR_Q6 * bottom * contour)
         return unprintability
 
     def preprocess(self, content):
