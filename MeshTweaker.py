@@ -178,11 +178,13 @@ class Tweak:
         #                   + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
         # unprintability = self.ABSOLUTE_F * (overhang + self.TAR_B) + self.RELATIVE_F * \
         #                  (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom)
-        unprintability = (self.TAR_P1 + self.TAR_P2 * overhang + self.TAR_P3 * overhang**2 +
-                          self.TAR_P4 * bottom + self.TAR_P5 * contour)
-        unprintability /= (self.TAR_Q1 + self.TAR_Q2 * bottom + self.TAR_Q3 * bottom**2 +
-                           self.TAR_Q4 * contour + self.TAR_Q5 * contour**2 + self.TAR_Q6 * bottom * contour)
-        return unprintability
+        numerator = (self.TAR_P1 + self.TAR_P2 * overhang + self.TAR_P3 * overhang ** 2 +
+                     self.TAR_P4 * bottom + self.TAR_P5 * contour)
+        denominator = (self.TAR_Q1 + self.TAR_Q2 * bottom + self.TAR_Q3 * bottom ** 2 +
+                       self.TAR_Q4 * contour + self.TAR_Q5 * contour ** 2 + self.TAR_Q6 * bottom * contour)
+        if abs(denominator) < 1e-7:
+            return numerator / 1e-7
+        return numerator / denominator
 
     def preprocess(self, content):
         """The Mesh format gets preprocessed for a better performance and stored into self.mesh
