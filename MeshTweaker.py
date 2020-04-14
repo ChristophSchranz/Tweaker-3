@@ -42,13 +42,25 @@ class Tweak:
 
     def __init__(self, content, extended_mode=False, verbose=True,
                  show_progress=False, favside=None, min_volume=False, **parameter):
-        self.VECTOR_TOL = parameter["VECTOR_TOL"]
-        self.PLAFOND_ADV = parameter["PLAFOND_ADV"]
+        # Load parameters
+        self.VECTOR_TOL = 0.001  # parameter["VECTOR_TOL"] fixed
         self.FIRST_LAY_H = parameter["FIRST_LAY_H"]
         self.NEGL_FACE_SIZE = parameter["NEGL_FACE_SIZE"]
         self.ABSOLUTE_F = parameter["ABSOLUTE_F"]
         self.RELATIVE_F = parameter["RELATIVE_F"]
         self.CONTOUR_F = parameter["CONTOUR_F"]
+
+        self.TAR_A = parameter["TAR_A"]
+        self.TAR_B = parameter["TAR_B"]
+        self.TAR_C = parameter["TAR_C"]
+        self.TAR_D = parameter["TAR_D"]
+        self.BOTTOM_F = parameter["BOTTOM_F"]
+        self.PLAFOND_ADV_A = parameter["PLAFOND_ADV_A"]
+        self.PLAFOND_ADV_B = parameter["PLAFOND_ADV_B"]
+        self.PLAFOND_ADV_C = parameter["PLAFOND_ADV_C"]
+        self.ANGLE_SCALE = parameter["ANGLE_SCALE"]
+        self.ASCENT = parameter["ASCENT"]
+        self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -60,8 +72,10 @@ class Tweak:
         progress = 0  # progress in percent of tweaking
         progress = self.print_progress(progress)
 
+        # Load mesh from file into class variable
         self.mesh = self.preprocess(content)
 
+        # if a favoured side is specified, load it to weight
         if favside:
             self.favour_side(favside)
         t_pre = time()
@@ -85,34 +99,30 @@ class Tweak:
         t_ds = time()
         progress = self.print_progress(progress)
 
-        # Calculate the unprintability for each orientation
+        # Calculate the unprintability for each orientation found in the gathering algorithms
         results = list()
         for side in orientations:
             orientation = -1 * np.array(side[0], dtype=np.float64)
 
-            self.project_verteces(orientation)
+            self.project_vertices(orientation)
             bottom, overhang, contour = self.calc_overhang(orientation, min_volume=min_volume)
             unprintability = self.target_function(bottom, overhang, contour, min_volume=min_volume)
-            # results = np.vstack((results, [orientation, bottom,
-            #                                overhang, contour, unprintability]))
             results.append([orientation, bottom, overhang, contour, unprintability])
             if verbose:
-                print("  %-26s %-10s%-10s%-10s%-10s "
+                print("  %-26s %-10.2f%-10.2f%-10.2f%-10.4g "
                       % (str(np.around(orientation, decimals=4)),
-                         round(bottom, 3), round(overhang, 3), round(contour, 3),
-                         round(unprintability, 2)))
+                         bottom, overhang, contour, unprintability))
         t_lit = time()
         progress = self.print_progress(progress)
 
-        # evaluate the best 5 alignments and calculate the rotation parameters
+        # evaluate the best alignments and calculate the rotation parameters
         results = np.array(results)
-        best_5_results = results[results[:, 4].argsort()]
-        best_5_results = list(best_5_results)
+        best_results = list(results[results[:, 4].argsort()])  # [:5]]  # previously, the best 5 alignments were stored
 
-        for i, align in enumerate(best_5_results):
-            best_5_results[i] = list(best_5_results[i])
+        for i, align in enumerate(best_results):
+            best_results[i] = list(best_results[i])
             v, phi, matrix = self.euler(align)
-            best_5_results[i].append([[v[0], v[1], v[2]], phi, matrix])
+            best_results[i].append([[v[0], v[1], v[2]], phi, matrix])
 
         if verbose:
             print("""Time-stats of algorithm:
@@ -127,15 +137,15 @@ class Tweak:
         # [[orientation0, bottom_area0, overhang_area0, contour_line_length, unprintability (gives the order),
         #       [euler_vector, euler_angle (in rad), rotation matrix]],
         #   orientation1, ..
-        if len(best_5_results) > 0:
-            self.euler_parameter = best_5_results[0][5][:2]
-            self.matrix = best_5_results[0][5][2]
-            self.alignment = best_5_results[0][0]
-            self.bottom_area = best_5_results[0][1]
-            self.overhang_area = best_5_results[0][2]
-            self.contour = best_5_results[0][3]
-            self.unprintability = best_5_results[0][4]
-            self.best_5 = best_5_results
+        if len(best_results) > 0:
+            self.euler_parameter = best_results[0][5][:2]
+            self.matrix = best_results[0][5][2]
+            self.alignment = best_results[0][0]
+            self.bottom_area = best_results[0][1]
+            self.overhang_area = best_results[0][2]
+            self.contour = best_results[0][3]
+            self.unprintability = best_results[0][4]
+            self.best_5 = best_results
 
         # Finish with a nice clean newline, as print_progress rewrites updates without advancing below.
         if show_progress:
@@ -153,16 +163,18 @@ class Tweak:
             a value for the unprintability. The smaller, the better."""
         if min_volume:  # minimize the volume of support material
             overhang /= 5  # a volume is of higher dimension, so the overhang have to be reduced
-            unprintability = (overhang / self.ABSOLUTE_F
-                              + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
-
-        else:  # minimize supported sufaces
-            unprintability = (overhang / self.ABSOLUTE_F
-                              + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
-        return round(unprintability, 6)
+        #     unprintability = (overhang / self.ABSOLUTE_F
+        #                       + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) * self.RELATIVE_F)
+        #
+        # else:  # minimize supported surfaces
+        # unprintability = (overhang / self.ABSOLUTE_F
+        #                   + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
+        unprintability = self.TAR_A * ((overhang + self.TAR_B) / self.ABSOLUTE_F) + self.RELATIVE_F * \
+                         (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom)
+        return unprintability
 
     def preprocess(self, content):
-        """The Mesh format gets preprocessed for a better performance.
+        """The Mesh format gets preprocessed for a better performance and stored into self.mesh
         Args:
             content (np.array): undefined representation of the mesh
         Returns:
@@ -171,7 +183,7 @@ class Tweak:
         mesh = np.array(content, dtype=np.float64)
 
         # prefix area vector, if not already done (e.g. in STL format)
-        if len(mesh[0]) == 3:
+        if mesh.shape[1] == 3:
             row_number = int(len(content) / 3)
             mesh = mesh.reshape(row_number, 3, 3)
             v0 = mesh[:, 0, :]
@@ -181,7 +193,8 @@ class Tweak:
                 .reshape(row_number, 1, 3)
             mesh = np.hstack((normals, mesh))
 
-        face_count = len(mesh)
+        # saves the amount of facets
+        face_count = mesh.shape[0]
 
         # append columns with a_min, area_size
         addendum = np.zeros((face_count, 2, 3))
@@ -197,11 +210,11 @@ class Tweak:
 
         # filter faces without area
         mesh = mesh[mesh[:, 5, 0] != 0]
-        face_count = len(mesh)
+        face_count = mesh.shape[0]
 
         # normalise area vector and correct area size
         mesh[:, 0, :] = mesh[:, 0, :] / mesh[:, 5, 0].reshape(face_count, 1)
-        mesh[:, 5, 0] = mesh[:, 5, 0] / 2  # halved because areas are triangle and no parallelograms
+        mesh[:, 5, 0] = mesh[:, 5, 0] / 2  # halve, because areas are triangles and not parallelograms
 
         # remove small facets (these are essential for contour calculation)
         if self.NEGL_FACE_SIZE > 0:
@@ -239,8 +252,9 @@ class Tweak:
         print("You favour the side {} with a factor of {}".format(
             side, f))
 
+        # Filter the aligning orientations
         diff = np.subtract(self.mesh[:, 0, :], side)
-        align = np.sum(diff * diff, axis=1) < 0.7654
+        align = np.sum(diff * diff, axis=1) < 0.7654 * (0.9 + self.ANGLE_SCALE)  # 0.7654, ANGLE_SCALE ist around 0.1
         mesh_not_align = self.mesh[np.logical_not(align)]
         mesh_align = self.mesh[align]
         mesh_align[:, 5, 0] = f * mesh_align[:, 5, 0]  # weight aligning orientations
@@ -256,9 +270,6 @@ class Tweak:
         Returns:
             list of the common orientation-tuples.
         """
-        # if not self.extended_mode:  # instead of 10
-        #     best_n = 12
-        #
         alignments = self.mesh[:, 0, :]
         orient = Counter()
         for index in range(len(self.mesh)):  # Accumulate area-vectors
@@ -354,7 +365,7 @@ class Tweak:
                 orientations.append(i)
         return orientations
 
-    def project_verteces(self, orientation):
+    def project_vertices(self, orientation):
         """Supplement the mesh array with scalars (max and median)
         for each face projected onto the orientation vector.
         Args:
@@ -379,7 +390,8 @@ class Tweak:
         Returns:
             the total bottom size, overhang size and contour length of the mesh
         """
-        ascent = np.cos(120 * np.pi / 180)
+        ascent_deg = 120 * (0.9 + self.ASCENT)  # self.ASCENT is 0.1 by default
+        ascent = np.cos(ascent_deg * np.pi / 180)
         anti_orient = -np.array(orientation)
         total_min = np.amin(self.mesh[:, 4, :])
 
@@ -406,9 +418,9 @@ class Tweak:
         if len(overhangs) > 0:
             if min_volume:
                 centers = overhangs[:, 1:4, :].sum(axis=1) / 3
-                heigths = np.inner(centers[:], orientation) - total_min
+                heights = np.inner(centers[:], orientation) - total_min
 
-                overhang = np.sum(heigths *
+                overhang = np.sum(heights *
                                   (np.amax((np.zeros(len(overhangs)) + 0.5,
                                             - np.inner(overhangs[:, 0, :], orientation)),
                                            axis=0) - 0.5) ** 2)
@@ -418,7 +430,7 @@ class Tweak:
                                             - np.inner(overhangs[:, 0, :], orientation)),
                                            axis=0) - 0.5) ** 2)
 
-            overhang -= self.PLAFOND_ADV * plafond
+            overhang -= (self.PLAFOND_ADV_C + self.PLAFOND_ADV_B * plafond + self.PLAFOND_ADV_A * plafond ** 2)
 
         else:
             overhang = 0
@@ -438,7 +450,7 @@ class Tweak:
                     contours[conlen, 1 + sortsc1, :])])
 
                 contours = np.sum(np.power(con, 2), axis=-1) ** 0.5
-                contour = np.sum(contours)
+                contour = np.sum(contours) + self.CONTOUR_AMOUNT * len(contours)
             else:
                 contour = 0
         else:  # consider the bottom area as square, bottom=a**2 ^ contour=4*a

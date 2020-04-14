@@ -18,16 +18,13 @@ else:
 __author__ = "Christoph Schranz, Salzburg Research"
 __version__ = "3.8"
 
-parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, "NEGL_FACE_SIZE": 1,
-                  "ABSOLUTE_F": 100, "RELATIVE_F": 1, "CONTOUR_F": 0.5})
-# Best from 20200413 [0.001451, 0.291153, 0.028855, 1.400084, 669.452018, 1.566669, 0.088707]
-
-# parametrize target_function
-# angle
-# constant in line: align = np.sum(diff * diff, axis=1) < 0.7654
-# ascent in line: ascent = np.cos(120 * np.pi / 180)
-# add non-linearity in: plafond = np.sum(plafonds[:, 5, 0])
-# and: bottom = np.sum(bottoms[:, 5, 0])
+# parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, "NEGL_FACE_SIZE": 1,
+#                   "ABSOLUTE_F": 100, "RELATIVE_F": 1, "CONTOUR_F": 0.5})
+parameter_tuples = [("ABSOLUTE_F", 100.0), ("RELATIVE_F", 1.0), ("CONTOUR_F", 1.0), ("FIRST_LAY_H", 0.1),
+                    ("TAR_A", 1.0), ("TAR_B", 0.0), ("TAR_C", 1.0), ("TAR_D", 1.0), ("BOTTOM_F", 1),
+                    ("PLAFOND_ADV_A", 0.0), ("PLAFOND_ADV_B", 0.2), ("PLAFOND_ADV_C", 0.0),
+                    ("ANGLE_SCALE", 0.1), ("ASCENT", 0.1), ("NEGL_FACE_SIZE", 1.0), ("CONTOUR_AMOUNT", 0.0)]
+parameter = dict(parameter_tuples)
 
 
 def getargs():
@@ -59,7 +56,7 @@ def getargs():
     arguments = parser.parse_args()
 
     if arguments.version:
-        print("Tweaker 3.8, (30 September 2017)")
+        print("Tweaker 3.9, (14 April 2020)")
         return None
 
     if not arguments.inputfile:
@@ -165,15 +162,15 @@ if __name__ == "__main__":
             # List tweaking results
             if args.result or args.verbose:
                 print("Result-stats:")
-                print(" Tweaked Z-axis: \t{}".format(x.alignment))
-                print(" Axis, angle:   \t{}".format(x.euler_parameter))
-                print(""" Rotation matrix: 
+                print("  Tweaked Z-axis: \t{}".format(x.alignment))
+                print("  Axis, angle:   \t{}".format(x.euler_parameter))
+                print("""  Rotation matrix: 
             {:2f}\t{:2f}\t{:2f}
             {:2f}\t{:2f}\t{:2f}
             {:2f}\t{:2f}\t{:2f}""".format(x.matrix[0][0], x.matrix[0][1], x.matrix[0][2],
                                           x.matrix[1][0], x.matrix[1][1], x.matrix[1][2],
                                           x.matrix[2][0], x.matrix[2][1], x.matrix[2][2]))
-                print(" Unprintability: \t{}".format(x.unprintability))
+                print("  Unprintability: \t{}".format(float("%.7g" % x.unprintability)))
 
                 print("Found result:    \t{:2f} s\n".format(time() - cstime))
 
