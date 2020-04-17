@@ -66,6 +66,8 @@ class Tweak:
         self.TAR_Q4 = parameter["TAR_Q4"]
         self.TAR_Q5 = parameter["TAR_Q5"]
         self.TAR_Q6 = parameter["TAR_Q6"]
+        self.OV_A = parameter["OV_A"]
+        self.OV_B = parameter["OV_B"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -267,7 +269,7 @@ class Tweak:
 
         # Filter the aligning orientations
         diff = np.subtract(self.mesh[:, 0, :], side)
-        align = np.sum(diff * diff, axis=1) < 0.7654 * (0.9 + self.ANGLE_SCALE)  # 0.7654, ANGLE_SCALE ist around 0.1
+        align = np.sum(diff * diff, axis=1) < self.ANGLE_SCALE  # 0.7654, ANGLE_SCALE ist around 0.7654
         mesh_not_align = self.mesh[np.logical_not(align)]
         mesh_align = self.mesh[align]
         mesh_align[:, 5, 0] = f * mesh_align[:, 5, 0]  # weight aligning orientations
@@ -403,8 +405,7 @@ class Tweak:
         Returns:
             the total bottom size, overhang size and contour length of the mesh
         """
-        ascent_deg = 120 * (0.9 + self.ASCENT)  # self.ASCENT is 0.1 by default
-        ascent = np.cos(ascent_deg * np.pi / 180)
+        ascent = np.cos(self.ASCENT * np.pi / 180)  # self.ASCENT is 120 by default, therefore ascent -0.5
         anti_orient = -np.array(orientation)
         total_min = np.amin(self.mesh[:, 4, :])
 
@@ -438,10 +439,18 @@ class Tweak:
                                             - np.inner(overhangs[:, 0, :], orientation)),
                                            axis=0) - 0.5) ** 2)
             else:
-                overhang = np.sum(overhangs[:, 5, 0] * 2 *
-                                  (np.amax((np.zeros(len(overhangs)) + 0.5,
-                                            - np.inner(overhangs[:, 0, :], orientation)),
-                                           axis=0) - 0.5) ** 2)
+                # # inner_term is a factor that specifies how much the area is overhanging in terms of the angle
+                # inner_term = np.amax((np.zeros(len(overhangs)) + 0.5,
+                #                       - np.inner(overhangs[:, 0, :], orientation)),  # inner(...,...) is <= -0.5
+                #                      axis=0) - 0.5
+                # # Sum of all areas * 2 * inner_term**2
+                # overhang = np.sum(overhangs[:, 5, 0] * 2 * (inner_term ** 2))
+
+                # New trial: Calculate the term that exceeds the maximal ascent and
+                # then multiply the overhang area with this polynomialized gap that is maximal 1
+                inner = np.inner(overhangs[:, 0, :], orientation) - ascent
+                overhang = np.sum(overhangs[:, 5, 0] * np.amin((self.OV_A * inner**2 + self.OV_B * inner,
+                                                                np.zeros(len(inner))+1), axis=0))
 
             overhang -= (self.PLAFOND_ADV_C + self.PLAFOND_ADV_B * plafond + self.PLAFOND_ADV_A * plafond ** 2)
 
