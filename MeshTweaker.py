@@ -66,7 +66,10 @@ class Tweak:
         self.TAR_Q4 = parameter["TAR_Q4"]
         self.TAR_Q5 = parameter["TAR_Q5"]
         self.TAR_Q6 = parameter["TAR_Q6"]
+        self.TAR_Q7 = parameter["TAR_Q7"]
+        self.TAR_Q8 = parameter["TAR_Q8"]
         self.OV_A = parameter["OV_A"]
+        self.OV_AA = parameter["OV_AA"]
         self.OV_B = parameter["OV_B"]
 
         self.extended_mode = extended_mode
@@ -183,7 +186,8 @@ class Tweak:
         numerator = (self.TAR_P1 + self.TAR_P2 * overhang + self.TAR_P3 * overhang ** 2 +
                      self.TAR_P4 * bottom + self.TAR_P5 * contour)
         denominator = (self.TAR_Q1 + self.TAR_Q2 * bottom + self.TAR_Q3 * bottom ** 2 +
-                       self.TAR_Q4 * contour + self.TAR_Q5 * contour ** 2 + self.TAR_Q6 * bottom * contour)
+                       self.TAR_Q4 * contour + self.TAR_Q5 * contour ** 2 + self.TAR_Q6 * bottom * contour
+                       + self.TAR_Q7 * overhang + self.TAR_Q8 * overhang ** 2)
         if abs(denominator) < 1e-7:
             return numerator / 1e-7
         return numerator / denominator
@@ -449,7 +453,7 @@ class Tweak:
                 # New trial: Calculate the term that exceeds the maximal ascent and
                 # then multiply the overhang area with this polynomialized gap that is maximal 1
                 inner = np.inner(overhangs[:, 0, :], orientation) - ascent
-                overhang = np.sum(overhangs[:, 5, 0] * np.amin((self.OV_A * inner**2 + self.OV_B * inner,
+                overhang = np.sum(overhangs[:, 5, 0] * np.amin((self.OV_A * np.abs(inner)**self.OV_AA + self.OV_B * inner,
                                                                 np.zeros(len(inner))+1), axis=0))
 
             overhang -= (self.PLAFOND_ADV_C + self.PLAFOND_ADV_B * plafond + self.PLAFOND_ADV_A * plafond ** 2)
