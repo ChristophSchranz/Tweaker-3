@@ -12,7 +12,7 @@ import numpy as np
 # # Constants used:
 # self.VECTOR_TOL = 0.001  # To remove alignment duplicates, the vector tolerance is
 # # used to distinguish two vectors.
-# PLAFOND_ADV = 0.2  # Printing a plafond is known to be more effective than
+# PLA_ADV = 0.2  # Printing a plafond is known to be more effective than
 # # very step overhangs. This value sets the advantage in %.
 # self.FIRST_LAY_H = 0.25  # The initial layer of a print has an altitude > 0
 # # bottom layer and very bottom-near overhangs can be handled as similar.
@@ -46,21 +46,21 @@ class Tweak:
         self.VECTOR_TOL = 0.001  # parameter["VECTOR_TOL"] fixed
         self.FIRST_LAY_H = parameter["FIRST_LAY_H"]
         self.NEGL_FACE_SIZE = parameter["NEGL_FACE_SIZE"]
-        self.ABSOLUTE_F = parameter["ABSOLUTE_F"]
-        self.RELATIVE_F = parameter["RELATIVE_F"]
+        self.ABS_F = parameter["ABS_F"]
+        self.REL_F = parameter["REL_F"]
         self.CONTOUR_F = parameter["CONTOUR_F"]
 
-        self.TAR_A = parameter["TAR_A"]
         self.TAR_B = parameter["TAR_B"]
         self.TAR_C = parameter["TAR_C"]
         self.TAR_D = parameter["TAR_D"]
         self.BOTTOM_F = parameter["BOTTOM_F"]
-        self.PLAFOND_ADV_A = parameter["PLAFOND_ADV_A"]
-        self.PLAFOND_ADV_B = parameter["PLAFOND_ADV_B"]
-        self.PLAFOND_ADV_C = parameter["PLAFOND_ADV_C"]
+        self.PLAF_A = parameter["PLAF_A"]
+        self.PLAF_B = parameter["PLAF_B"]
+        self.PLAF_C = parameter["PLAF_C"]
+        self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
         self.ANGLE_SCALE = parameter["ANGLE_SCALE"]
         self.ASCENT = parameter["ASCENT"]
-        self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
+        self.OV_B = parameter["OV_B"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -162,15 +162,17 @@ class Tweak:
         Returns:
             a value for the unprintability. The smaller, the better."""
         if min_volume:  # minimize the volume of support material
-            overhang /= 5  # a volume is of higher dimension, so the overhang have to be reduced
+            # a volume is of higher dimension, so the overhang have to be reduced. This solution might not suffice
+            overhang /= 5
+
         #     unprintability = (overhang / self.ABSOLUTE_F
         #                       + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) * self.RELATIVE_F)
         #
         # else:  # minimize supported surfaces
         # unprintability = (overhang / self.ABSOLUTE_F
         #                   + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
-        unprintability = self.TAR_A * ((overhang + self.TAR_B) / self.ABSOLUTE_F) + self.RELATIVE_F * \
-                         (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom)
+        unprintability = self.ABS_F * (overhang + self.TAR_B) + self.REL_F * (overhang + self.TAR_C) / (
+                                     self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom)
         return unprintability
 
     def preprocess(self, content):
@@ -254,7 +256,7 @@ class Tweak:
 
         # Filter the aligning orientations
         diff = np.subtract(self.mesh[:, 0, :], side)
-        align = np.sum(diff * diff, axis=1) < 0.7654 * (0.9 + self.ANGLE_SCALE)  # 0.7654, ANGLE_SCALE ist around 0.1
+        align = np.sum(diff * diff, axis=1) < self.ANGLE_SCALE  # 0.7654, ANGLE_SCALE ist around 0.7654
         mesh_not_align = self.mesh[np.logical_not(align)]
         mesh_align = self.mesh[align]
         mesh_align[:, 5, 0] = f * mesh_align[:, 5, 0]  # weight aligning orientations
@@ -390,13 +392,12 @@ class Tweak:
         Returns:
             the total bottom size, overhang size and contour length of the mesh
         """
-        ascent_deg = 120 * (0.9 + self.ASCENT)  # self.ASCENT is 0.1 by default
-        ascent = np.cos(ascent_deg * np.pi / 180)
+        ascent = np.cos(self.ASCENT * np.pi / 180)  # self.ASCENT is 120 by default, therefore ascent -0.5
         anti_orient = -np.array(orientation)
         total_min = np.amin(self.mesh[:, 4, :])
 
         # filter bottom area
-        bottoms = self.mesh[self.mesh[:, 5, 1] < total_min + self.FIRST_LAY_H]
+        bottoms = self.mesh[self.mesh[:, 5, 1] <= total_min + self.FIRST_LAY_H]
         if len(bottoms) > 0:
             bottom = np.sum(bottoms[:, 5, 0])
         else:
@@ -420,17 +421,30 @@ class Tweak:
                 centers = overhangs[:, 1:4, :].sum(axis=1) / 3
                 heights = np.inner(centers[:], orientation) - total_min
 
-                overhang = np.sum(heights *
+                overhang = np.sum(heights * overhangs[:, 5, 0] * 2 *
                                   (np.amax((np.zeros(len(overhangs)) + 0.5,
                                             - np.inner(overhangs[:, 0, :], orientation)),
                                            axis=0) - 0.5) ** 2)
             else:
-                overhang = np.sum(overhangs[:, 5, 0] * 2 *
-                                  (np.amax((np.zeros(len(overhangs)) + 0.5,
-                                            - np.inner(overhangs[:, 0, :], orientation)),
-                                           axis=0) - 0.5) ** 2)
+                # overhang = np.sum(overhangs[:, 5, 0] * 2 *
+                #                   (np.amax((np.zeros(len(overhangs)) + 0.5,
+                #                             - np.inner(overhangs[:, 0, :], orientation)),
+                #                            axis=0) - 0.5) ** 2)
+                inner = np.inner(overhangs[:, 0, :], orientation) - ascent  # inner is negative
+                # inner_max = (np.amax((np.zeros(len(overhangs)) + 0.5,
+                #                             - np.inner(overhangs[:, 0, :], orientation)),
+                #                            axis=0) - 0.5)
+                overhang = np.inner(overhangs[:, 5, 0], (1 - np.exp(self.OV_B * inner)))  # about 4
+                pass
+                # [0.009324, 1.336, 1.167, 0.1184, 0.2135, 0.9914, 1.145, 1.246, 0.01082, 0.2475, 1.001, 0.7799, 118.2, 0.4129, 0.01073, 1.43, 3.165, 1.875]
+                # has a fitness of: (4.56677, 4.0)
+                # overhang = self.OV_A * np.sum(overhangs[:, 5, 0] * (1 - self.OV_B * inner - self.OV_C * inner**2))
 
-            overhang -= (self.PLAFOND_ADV_C + self.PLAFOND_ADV_B * plafond + self.PLAFOND_ADV_A * plafond ** 2)
+                # overhang = 0.25 * np.sum(overhangs[:, 5, 0])  # has about 4
+                # overhang = np.sum(
+                # overhangs[:, 5, 0] * np.amin((self.OV_A * np.abs(inner) ** self.OV_AA + self.OV_B * inner,
+                #                                   np.zeros(len(inner)) + 1), axis=0))
+            overhang -= (self.PLAF_A + self.PLAF_B * plafond**self.PLAF_C)
 
         else:
             overhang = 0
