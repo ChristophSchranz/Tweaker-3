@@ -61,6 +61,7 @@ class Tweak:
         self.ANGLE_SCALE = parameter["ANGLE_SCALE"]
         self.ASCENT = parameter["ASCENT"]
         self.OV_B = parameter["OV_B"]
+        self.OV_H = parameter["OV_H"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -161,11 +162,11 @@ class Tweak:
             min_volume (bool): Minimise volume of support material or supported surface area
         Returns:
             a value for the unprintability. The smaller, the better."""
-        if min_volume:  # minimize the volume of support material
-            # a volume is of higher dimension, so the overhang have to be reduced. This solution might not suffice
-            overhang /= 5
-
-        #     unprintability = (overhang / self.ABSOLUTE_F
+        # if min_volume:  # minimize the volume of support material
+        #     # a volume is of higher dimension, so the overhang have to be reduced. This solution might not suffice
+        #     overhang /= 5
+        #
+        # #     unprintability = (overhang / self.ABSOLUTE_F
         #                       + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) * self.RELATIVE_F)
         #
         # else:  # minimize supported surfaces
@@ -420,20 +421,19 @@ class Tweak:
             if min_volume:
                 centers = overhangs[:, 1:4, :].sum(axis=1) / 3
                 heights = np.inner(centers[:], orientation) - total_min
-
-                overhang = np.sum(heights * overhangs[:, 5, 0] * 2 *
-                                  (np.amax((np.zeros(len(overhangs)) + 0.5,
-                                            - np.inner(overhangs[:, 0, :], orientation)),
-                                           axis=0) - 0.5) ** 2)
+                #
+                # overhang = np.sum(heights *
+                #                   (np.amax((np.zeros(len(overhangs)) + 0.5,
+                #                             - np.inner(overhangs[:, 0, :], orientation)),
+                #                            axis=0) - 0.5) ** 2)
+                inner = np.inner(overhangs[:, 0, :], orientation) - ascent  # inner is negative
+                overhang = self.OV_H * np.inner(heights * overhangs[:, 5, 0], (1 - np.exp(self.OV_B * inner)))  # about 4
             else:
                 # overhang = np.sum(overhangs[:, 5, 0] * 2 *
                 #                   (np.amax((np.zeros(len(overhangs)) + 0.5,
                 #                             - np.inner(overhangs[:, 0, :], orientation)),
                 #                            axis=0) - 0.5) ** 2)
                 inner = np.inner(overhangs[:, 0, :], orientation) - ascent  # inner is negative
-                # inner_max = (np.amax((np.zeros(len(overhangs)) + 0.5,
-                #                             - np.inner(overhangs[:, 0, :], orientation)),
-                #                            axis=0) - 0.5)
                 overhang = np.inner(overhangs[:, 5, 0], (1 - np.exp(self.OV_B * inner)))  # about 4
                 pass
                 # [0.009324, 1.336, 1.167, 0.1184, 0.2135, 0.9914, 1.145, 1.246, 0.01082, 0.2475, 1.001, 0.7799, 118.2, 0.4129, 0.01073, 1.43, 3.165, 1.875]
