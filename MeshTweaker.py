@@ -167,8 +167,8 @@ class Tweak:
         # else:  # minimize supported surfaces
         # unprintability = (overhang / self.ABSOLUTE_F
         #                   + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
-        unprintability = self.TAR_A * ((overhang + self.TAR_B) / self.ABSOLUTE_F) + self.RELATIVE_F * \
-                         (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom)
+        unprintability = self.TAR_A * (overhang + self.TAR_B) + self.RELATIVE_F * (overhang + self.TAR_C)\
+                         / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom + self.TAR_A * overhang)
         return unprintability
 
     def preprocess(self, content):
