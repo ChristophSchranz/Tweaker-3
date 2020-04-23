@@ -43,21 +43,21 @@ class Tweak:
     def __init__(self, content, extended_mode=False, verbose=True,
                  show_progress=False, favside=None, min_volume=False, **parameter):
         # Load parameters
-        self.VECTOR_TOL = 0.001  # parameter["VECTOR_TOL"] fixed
-        self.FIRST_LAY_H = parameter["FIRST_LAY_H"]
-        self.NEGL_FACE_SIZE = parameter["NEGL_FACE_SIZE"]
-        self.ABSOLUTE_F = parameter["ABSOLUTE_F"]
-        self.RELATIVE_F = parameter["RELATIVE_F"]
-        self.CONTOUR_F = parameter["CONTOUR_F"]
-
         self.TAR_A = parameter["TAR_A"]
         self.TAR_B = parameter["TAR_B"]
         self.TAR_C = parameter["TAR_C"]
-        self.TAR_D = parameter["TAR_D"]
+        self.RELATIVE_F = parameter["RELATIVE_F"]
+        self.CONTOUR_F = parameter["CONTOUR_F"]
         self.BOTTOM_F = parameter["BOTTOM_F"]
-        self.PLAFOND_ADV_B = parameter["PLAFOND_ADV_B"]
-        self.ANGLE_SCALE = parameter["ANGLE_SCALE"]
+        self.TAR_D = parameter["TAR_D"]
+        self.TAR_E = parameter["TAR_E"]
+
+        self.VECTOR_TOL = parameter["VECTOR_TOL"]
+        self.FIRST_LAY_H = parameter["FIRST_LAY_H"]
+        self.NEGL_FACE_SIZE = parameter["NEGL_FACE_SIZE"]
+
         self.ASCENT = parameter["ASCENT"]
+        self.PLAFOND_ADV = parameter["PLAFOND_ADV"]
         self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
 
         self.extended_mode = extended_mode
@@ -168,7 +168,7 @@ class Tweak:
         # unprintability = (overhang / self.ABSOLUTE_F
         #                   + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
         unprintability = self.TAR_A * (overhang + self.TAR_B) + self.RELATIVE_F * (overhang + self.TAR_C)\
-                         / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom + self.TAR_A * overhang)
+                         / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom + self.TAR_E * overhang)
         return unprintability
 
     def preprocess(self, content):
@@ -252,7 +252,7 @@ class Tweak:
 
         # Filter the aligning orientations
         diff = np.subtract(self.mesh[:, 0, :], side)
-        align = np.sum(diff * diff, axis=1) < 0.7654 * (0.9 + self.ANGLE_SCALE)  # 0.7654, ANGLE_SCALE ist around 0.1
+        align = np.sum(diff * diff, axis=1) < 0.7654  # 0.7654, ANGLE_SCALE ist around 0.1
         mesh_not_align = self.mesh[np.logical_not(align)]
         mesh_align = self.mesh[align]
         mesh_align[:, 5, 0] = f * mesh_align[:, 5, 0]  # weight aligning orientations
@@ -388,8 +388,7 @@ class Tweak:
         Returns:
             the total bottom size, overhang size and contour length of the mesh
         """
-        ascent_deg = self.ASCENT  # self.ASCENT is 0.1 by default
-        ascent = np.cos(ascent_deg * np.pi / 180)
+        # ascent = np.cos(self.ASCENT * np.pi / 180)
         anti_orient = -np.array(orientation)
         total_min = np.amin(self.mesh[:, 4, :])
 
@@ -401,7 +400,7 @@ class Tweak:
             bottom = 0
 
         # filter overhangs
-        overhangs = self.mesh[np.inner(self.mesh[:, 0, :], orientation) < ascent]
+        overhangs = self.mesh[np.inner(self.mesh[:, 0, :], orientation) < self.ASCENT]
         overhangs = overhangs[overhangs[:, 5, 1] > (total_min + self.FIRST_LAY_H)]
 
         if self.extended_mode:
@@ -418,24 +417,18 @@ class Tweak:
                 centers = overhangs[:, 1:4, :].sum(axis=1) / 3
                 heights = np.inner(centers[:], orientation) - total_min
 
-                overhang = np.sum(overhangs[:, 5, 0] * 2 * heights *
-                                  (np.amax((np.zeros(len(overhangs)) + ascent,
-                                            - np.inner(overhangs[:, 0, :], orientation)),
-                                           axis=0) - ascent) ** 2)
-                # inner = np.inner(overhangs[:, 0, :], orientation) - ascent  # inner is negative
-                # overhang = self.OV_H * np.inner(heights * overhangs[:, 5, 0], (1 - np.exp(self.OV_B * inner)))
+                inner = np.inner(overhangs[:, 0, :], orientation) - self.ASCENT
+                overhang = 2 * np.sum(heights * overhangs[:, 5, 0] * (inner * (inner < 0)) ** 2)
             else:
                 # overhang = np.sum(overhangs[:, 5, 0] * 2 *
                 #                   (np.amax((np.zeros(len(overhangs)) + 0.5,
                 #                             - np.inner(overhangs[:, 0, :], orientation)),
                 #                            axis=0) - 0.5) ** 2)
-                # this line does:
-                # over_map = lambda x: (1 - np.exp(self.OV_B * (x - ascent))) if x <= ascent else 0
-                inner = ascent - np.amin((np.zeros(len(overhangs)) + ascent,
-                                          np.inner(overhangs[:, 0, :], orientation)), axis=0)
-                overhang = np.sum(overhangs[:, 5, 0] * inner**2)
-
-            overhang -= self.PLAFOND_ADV_B * plafond
+                # improved performance by finding maximum using the multiplication method, see:
+                # https://stackoverflow.com/questions/32109319/how-to-implement-the-relu-function-in-numpy
+                inner = np.inner(overhangs[:, 0, :], orientation) - self.ASCENT
+                overhang = 2 * np.sum(overhangs[:, 5, 0] * (inner * (inner < 0)) ** 2 )
+            overhang -= self.PLAFOND_ADV * plafond
 
         else:
             overhang = 0

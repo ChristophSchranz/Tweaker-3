@@ -18,7 +18,6 @@ else:
 __author__ = "Christoph Schranz, Salzburg Research"
 __version__ = "3.8"
 
-<<<<<<< HEAD
 # parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, "NEGL_FACE_SIZE": 1,
 #                   "ABSOLUTE_F": 100, "RELATIVE_F": 1, "CONTOUR_F": 0.5})
 parameter_tuples = [("TAR_P1", 1.0), ("TAR_P2", 1.0), ("TAR_P3", 1.0), ("TAR_P4", 1.0), ("TAR_P5", 1.0),
@@ -26,10 +25,6 @@ parameter_tuples = [("TAR_P1", 1.0), ("TAR_P2", 1.0), ("TAR_P3", 1.0), ("TAR_P4"
                     ("PLAFOND_ADV_A", 0.01), ("PLAFOND_ADV_B", 0.2), ("PLAFOND_ADV_C", 0.01), ("FIRST_LAY_H", 0.1),
                     ("ANGLE_SCALE", 0.1), ("ASCENT", 0.1), ("NEGL_FACE_SIZE", 1.0), ("CONTOUR_AMOUNT", 0.01)]
 parameter = dict(parameter_tuples)
-=======
-parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, "NEGL_FACE_SIZE": 1,
-                  "ABSOLUTE_F": 100, "RELATIVE_F": 1, "CONTOUR_F": 0.5})
-# Best from 20200413 [0.001451, 0.291153, 0.028855, 1.400084, 669.452018, 1.566669, 0.088707]
 
 # parametrize target_function
 # angle
@@ -37,7 +32,6 @@ parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, 
 # ascent in line: ascent = np.cos(120 * np.pi / 180)
 # add non-linearity in: plafond = np.sum(plafonds[:, 5, 0])
 # and: bottom = np.sum(bottoms[:, 5, 0])
->>>>>>> parent of ed6f36f... added more parameter
 
 
 def getargs():
