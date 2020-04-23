@@ -11,7 +11,25 @@ import FileHandler
 # You can preset the default model in line 42
 
 __author__ = "Christoph Schranz, Salzburg Research"
-__version__ = "3.8"
+__version__ = "3.9"
+
+parameter = {
+    "VECTOR_TOL": 0.001,
+    "PLAFOND_ADV": 0.2,  # Printing a plafond is known to be more effective than very step overhangs.
+    "FIRST_LAY_H": 0.25,  # The initial layer height, bottom layer and bottom-near overhangs can be handled as similar.
+    "NEGL_FACE_SIZE": 1,  # neglects facet sizes smaller than this value (in mm^2) for a better performance
+    "ABSOLUTE_F": 100,  # These values scale the the parameters bottom size
+    "RELATIVE_F": 1,  # overhang size, and bottom contour length to get a robust
+    "CONTOUR_F": 0.5,  # value for the Unprintability
+    "TAR_A": 0.78,
+    "TAR_B": 0.25,
+    "TAR_C": 1.467,
+    "TAR_D": 0.42,
+    "BOTTOM_F": 9.08,
+    "ANGLE_SCALE": 0.7654,
+    "ASCENT": 118,
+    "CONTOUR_AMOUNT": 0.1234
+}
 
 
 def getargs():
@@ -43,7 +61,7 @@ def getargs():
     arguments = parser.parse_args()
 
     if arguments.version:
-        print("Tweaker 3.8, (30 September 2017)")
+        print("Tweaker 3.9, (23 April 2020, parameter are optimized by an evolutionary algorithm)")
         return None
 
     if not arguments.inputfile:
@@ -139,7 +157,8 @@ if __name__ == "__main__":
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
+                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside,
+                          args.volume, **parameter)
                 info[part]["matrix"] = x.matrix
                 info[part]["tweaker_stats"] = x
             except (KeyboardInterrupt, SystemExit):
