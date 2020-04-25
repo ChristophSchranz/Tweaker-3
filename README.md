@@ -29,7 +29,7 @@ The extended mode is suggested for this operation.
 
 ### Convert a 3mf object to stl without tweaking:
 
-`python Tweaker.py -i pyramid.3mf -c`
+`python Tweaker.py -i pyramid.3mf -c  -o pyramid.stl`
 
 
 ### Choose the output type of the STL format:
