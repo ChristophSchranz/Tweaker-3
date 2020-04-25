@@ -31,7 +31,7 @@ class Tweak:
     def __init__(self, content, extended_mode=False, verbose=True,
                  show_progress=False, favside=None, min_volume=False, **parameter):
         # Load parameters
-        self.VECTOR_TOL = parameter["VECTOR_TOL"]
+        self.VECTOR_TOL = 0.001  # parameter["VECTOR_TOL"]
         self.FIRST_LAY_H = parameter["FIRST_LAY_H"]
         self.NEGL_FACE_SIZE = parameter["NEGL_FACE_SIZE"]
         self.ABSOLUTE_F = parameter["ABSOLUTE_F"]

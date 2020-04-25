@@ -13,22 +13,24 @@ import FileHandler
 __author__ = "Christoph Schranz, Salzburg Research"
 __version__ = "3.9"
 
+# This parameter were minimized by the evolutionary algorithm
+# https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200414' on 100 objects
+# with a fitness of 4.514771324222876, and a miss-classification rate of 4.25
 parameter = {
-    "VECTOR_TOL": 0.001,
-    "PLAFOND_ADV": 0.2,  # Printing a plafond is known to be more effective than very step overhangs.
-    "FIRST_LAY_H": 0.25,  # The initial layer height, bottom layer and bottom-near overhangs can be handled as similar.
-    "NEGL_FACE_SIZE": 1,  # neglects facet sizes smaller than this value (in mm^2) for a better performance
-    "ABSOLUTE_F": 100,  # These values scale the the parameters bottom size
-    "RELATIVE_F": 1,  # overhang size, and bottom contour length to get a robust
-    "CONTOUR_F": 0.5,  # value for the Unprintability
-    "TAR_A": 0.78,
-    "TAR_B": 0.25,
-    "TAR_C": 1.467,
-    "TAR_D": 0.42,
-    "BOTTOM_F": 9.08,
-    "ANGLE_SCALE": 0.7654,
-    "ASCENT": 118,
-    "CONTOUR_AMOUNT": 0.1234
+    'ABSOLUTE_F': 98.5883768434822,
+    'RELATIVE_F': 1.162524130132582,
+    'CONTOUR_F': 0.1605628698074317,
+    'FIRST_LAY_H': 0.08473208766649207,
+    'TAR_A': 0.7015860182950739,
+    'TAR_B': 0.26931582120058184,
+    'TAR_C': 1.554247674370683,
+    'TAR_D': 0.44833952635629537,
+    'BOTTOM_F': 0.8840613107383717,
+    'PLAFOND_ADV': 0.24174313621949237,
+    'ANGLE_SCALE': 0.7254421358435629,
+    'ASCENT': 119.03812433302157,
+    'NEGL_FACE_SIZE': 0.43859512908527554,
+    'CONTOUR_AMOUNT': 0.012893512521961371
 }
 
 
