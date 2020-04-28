@@ -59,6 +59,7 @@ class Tweak:
         self.ASCENT = parameter["ASCENT"]
         self.PLAFOND_ADV = parameter["PLAFOND_ADV"]
         self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
+        self.OV_H = parameter["OV_H"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -418,7 +419,7 @@ class Tweak:
                 heights = np.inner(centers[:], orientation) - total_min
 
                 inner = np.inner(overhangs[:, 0, :], orientation) - self.ASCENT
-                overhang = 2 * np.sum(heights * overhangs[:, 5, 0] * (inner * (inner < 0)) ** 2)
+                overhang = 2 * np.sum(heights * overhangs[:, 5, 0] * np.abs(inner * (inner < 0)) ** self.OV_H)
             else:
                 # overhang = np.sum(overhangs[:, 5, 0] * 2 *
                 #                   (np.amax((np.zeros(len(overhangs)) + 0.5,
@@ -427,7 +428,7 @@ class Tweak:
                 # improved performance by finding maximum using the multiplication method, see:
                 # https://stackoverflow.com/questions/32109319/how-to-implement-the-relu-function-in-numpy
                 inner = np.inner(overhangs[:, 0, :], orientation) - self.ASCENT
-                overhang = 2 * np.sum(overhangs[:, 5, 0] * (inner * (inner < 0)) ** 2 )
+                overhang = 2 * np.sum(overhangs[:, 5, 0] * np.abs(inner * (inner < 0)) ** self.OV_H)
             overhang -= self.PLAFOND_ADV * plafond
 
         else:
