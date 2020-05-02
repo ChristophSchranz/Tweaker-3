@@ -60,6 +60,13 @@ class Tweak:
         self.PLAFOND_ADV = parameter["PLAFOND_ADV"]
         self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
         self.OV_H = parameter["OV_H"]
+        if abs(self.OV_H - 2) < 0.05:  # set to nearby integers as they are faster
+            self.OV_H = 2
+        if abs(self.OV_H - 1) < 0.05:
+            self.OV_H = 1
+        self.height_offset = parameter["height_offset"]
+        self.height_log = parameter["height_log"]
+        self.height_log_k = parameter["height_log_k"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -160,8 +167,8 @@ class Tweak:
             min_volume (bool): Minimise volume of support material or supported surface area
         Returns:
             a value for the unprintability. The smaller, the better."""
-        if min_volume:  # minimize the volume of support material
-            overhang /= 20  # a volume is of higher dimension, so the overhang have to be reduced
+        # if min_volume:  # minimize the volume of support material
+        #     overhang /= 20  # a volume is of higher dimension, so the overhang have to be reduced
         #     unprintability = (overhang / self.ABSOLUTE_F
         #                       + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) * self.RELATIVE_F)
         #
@@ -419,7 +426,9 @@ class Tweak:
                 heights = np.inner(centers[:], orientation) - total_min
 
                 inner = np.inner(overhangs[:, 0, :], orientation) - self.ASCENT
-                overhang = 2 * np.sum(heights * overhangs[:, 5, 0] * np.abs(inner * (inner < 0)) ** self.OV_H)
+                # overhang = np.sum(heights * overhangs[:, 5, 0] * np.abs(inner * (inner < 0)) ** 2)
+                overhang = np.sum((self.height_offset + self.height_log * np.log(self.height_log_k * heights + 1)) *
+                                  overhangs[:, 5, 0] * np.abs(inner * (inner < 0)) ** self.OV_H)
             else:
                 # overhang = np.sum(overhangs[:, 5, 0] * 2 *
                 #                   (np.amax((np.zeros(len(overhangs)) + 0.5,
