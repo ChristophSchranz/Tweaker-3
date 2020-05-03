@@ -101,6 +101,9 @@ class Tweak:
         t_lit = time()
         progress = self.print_progress(progress)
 
+        # Remove the mesh structure as soon as it is not used anymore
+        del self.mesh
+
         # evaluate the best alignments and calculate the rotation parameters
         results = np.array(results)
         best_results = list(results[results[:, 4].argsort()])  # [:5]]  # previously, the best 5 alignments were stored
