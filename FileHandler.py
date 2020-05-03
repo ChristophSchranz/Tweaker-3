@@ -140,13 +140,13 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
                 mesh = content["mesh"]
                 filename = content["name"]
 
-                tweakedcontent = self.rotate_ascii_stl(info[part]["matrix"], mesh, filename)
+                mesh = self.rotate_ascii_stl(info[part]["matrix"], mesh, filename)
                 if len(objects.keys()) == 1:
                     outname = outputfile
                 else:
                     outname = ".".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
                 with open(outname, 'w') as outfile:
-                    outfile.write(tweakedcontent)
+                    outfile.write(mesh)
 
         else:  # binary STL, binary stl can't support multiparts
             # Create seperate files with rotated content.
@@ -154,7 +154,7 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
                                             ).encode().ljust(79, b" ") + b"\n"
             for part, content in objects.items():
                 mesh = objects[part]["mesh"]
-                tweaked_array = self.rotate_bin_stl(info[part]["matrix"], mesh)
+                mesh = self.rotate_bin_stl(info[part]["matrix"], mesh)
 
                 if len(objects.keys()) == 1:
                     outname = outputfile
@@ -162,7 +162,7 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
                     outname = ".".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
                 length = struct.pack("<I", int(len(mesh) / 3))
                 with open(outname, 'wb') as outfile:
-                    outfile.write(bytearray(header + length + b"".join(tweaked_array)))
+                    outfile.write(bytearray(header + length + b"".join(mesh)))
 
     @staticmethod
     def rotate_3mf(*arg):
@@ -178,17 +178,17 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
             mesh = mesh.reshape(row_number, 3, 3)
 
         # upgrade numpy with: "pip install numpy --upgrade"
-        rotated_content = np.matmul(mesh, rotation_matrix)
-
-        v0 = rotated_content[:, 0, :]
-        v1 = rotated_content[:, 1, :]
-        v2 = rotated_content[:, 2, :]
+        mesh = np.matmul(mesh, rotation_matrix)
+        
+        v0 = mesh[:, 0, :]
+        v1 = mesh[:, 1, :]
+        v2 = mesh[:, 2, :]
         normals = np.cross(np.subtract(v1, v0), np.subtract(v2, v0)) \
-            .reshape(int(len(rotated_content)), 1, 3)
-        rotated_content = np.hstack((normals, rotated_content))
+            .reshape(int(len(mesh)), 1, 3)
+        mesh = np.hstack((normals, mesh))
 
         tweaked = list("solid %s" % filename)
-        tweaked += list(map(self.write_facett, list(rotated_content)))
+        tweaked += list(map(self.write_facett, list(mesh)))
         tweaked.append("\nendsolid %s\n" % filename)
         tweaked = "".join(tweaked)
         return tweaked
@@ -211,7 +211,6 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
         following changes in Tweaker.py: Replace "rotatebinSTL" by "rotateSTL"
         and set in the write sequence the open outfile option from "w" to "wb".
         However, the ascii version is much faster in Python 3."""
-
         mesh = np.array(content, dtype=np.float64)
 
         # prefix area vector, if not already done (e.g. in STL format)
@@ -220,23 +219,23 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
             mesh = mesh.reshape(row_number, 3, 3)
 
         # upgrade numpy with: "pip install numpy --upgrade"
-        rotated_content = np.matmul(mesh, rotation_matrix)
+        mesh = np.matmul(mesh, rotation_matrix)
 
-        v0 = rotated_content[:, 0, :]
-        v1 = rotated_content[:, 1, :]
-        v2 = rotated_content[:, 2, :]
+        v0 = mesh[:, 0, :]
+        v1 = mesh[:, 1, :]
+        v2 = mesh[:, 2, :]
         normals = np.cross(np.subtract(v1, v0), np.subtract(v2, v0)
-                           ).reshape(int(len(rotated_content)), 1, 3)
-        rotated_content = np.hstack((normals, rotated_content))
+                           ).reshape(int(len(mesh)), 1, 3)
+        mesh = np.hstack((normals, mesh))
         # header = "Tweaked on {}".format(time.strftime("%a %d %b %Y %H:%M:%S")
         #                                 ).encode().ljust(79, b" ") + b"\n"
         # header = struct.pack("<I", int(len(content) / 3))  # list("solid %s" % filename)
 
-        tweaked_array = list(map(self.write_bin_facett, rotated_content))
+        mesh = list(map(self.write_bin_facett, mesh))
 
         # return header + b"".join(tweaked_array)
         # return b"".join(tweaked_array)
-        return tweaked_array
+        return mesh
 
     @staticmethod
     def write_bin_facett(facett):
