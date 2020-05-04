@@ -60,9 +60,9 @@ class Tweak:
         self.PLAFOND_ADV = parameter["PLAFOND_ADV"]
         self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
         self.OV_H = parameter["OV_H"]
-        if abs(self.OV_H - 2) < 0.05:  # set to nearby integers as they are faster
+        if abs(self.OV_H - 2) < 0.1:  # set to nearby integers as they are faster
             self.OV_H = 2
-        if abs(self.OV_H - 1) < 0.05:
+        if abs(self.OV_H - 1) < 0.1:
             self.OV_H = 1
         self.height_offset = parameter["height_offset"]
         self.height_log = parameter["height_log"]
