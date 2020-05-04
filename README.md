@@ -13,17 +13,20 @@ Author: Christoph Schranz, 12.01.2016
 
 ### Extended mode:
 
-This mode yields the most reliable results, but needs more computation time.
+This mode yields the most reliable results, 
+but needs slightly more computation time. 
+This is the suggested mode.
 
 `python Tweaker.py -i death_star.stl -vb -x`
 
 
 ### Minimise the necessary support material:
 
-If you want to optimise the print in terms of minimal support material volume, add the flag -vol.
-The extended mode is suggested for this operation.
+If you want to optimise the print in terms of minimal support surfaces
+ instead of the default volume, add the parameter `-min sur` 
+ or `--minimize surfaces`
 
-`python Tweaker.py -i demo_object.stl -vol -x`
+`python Tweaker.py -i demo_object.stl -min sur -x`
 
 
 

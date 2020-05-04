@@ -13,53 +13,33 @@ import FileHandler
 __author__ = "Christoph Schranz, Salzburg Research"
 __version__ = "3.9"
 
-# This parameter were minimized by the evolutionary algorithm
-# https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200414' on 100 objects
-# with a fitness of 4.514771324222876, and a miss-classification rate of 4.25
-parameter = {
-    'ABSOLUTE_F': 98.5883768434822,
-    'RELATIVE_F': 1.162524130132582,
-    'CONTOUR_F': 0.1605628698074317,
-    'FIRST_LAY_H': 0.08473208766649207,
-    'TAR_A': 0.7015860182950739,
-    'TAR_B': 0.26931582120058184,
-    'TAR_C': 1.554247674370683,
-    'TAR_D': 0.44833952635629537,
-    'BOTTOM_F': 0.8840613107383717,
-    'PLAFOND_ADV': 0.24174313621949237,
-    'ANGLE_SCALE': 0.7254421358435629,
-    'ASCENT': 119.03812433302157,
-    'NEGL_FACE_SIZE': 0.43859512908527554,
-    'CONTOUR_AMOUNT': 0.012893512521961371
-}
-
 
 def getargs():
     parser = argparse.ArgumentParser(description="Orientation tool for better 3D prints")
-    parser.add_argument('-i', action="store",
+    parser.add_argument('-i ', action="store",
                         dest="inputfile", help="select input file")
-    parser.add_argument('-o', action="store", dest="outputfile", type=str,
+    parser.add_argument('-o ', action="store", dest="outputfile", type=str,
                         help="select output file. '_tweaked' is postfix by default")
-    parser.add_argument('-vb', '--verbose', action="store_true", dest="verbose",
+    parser.add_argument('-vb ', '--verbose', action="store_true", dest="verbose",
                         help="increase output verbosity", default=False)
-    parser.add_argument('-p', '--progress', action="store_true", dest="show_progress",
+    parser.add_argument('-p ', '--progress', action="store_true", dest="show_progress",
                         help="show the progress of Tweaking", default=False)
-    parser.add_argument('-c', '--convert', action="store_true", dest="convert",
+    parser.add_argument('-c ', '--convert', action="store_true", dest="convert",
                         help="convert 3mf to stl without tweaking", default=False)
-    parser.add_argument('-t', '--outputtype', action="store", dest="output_type", default=False,
+    parser.add_argument('-t ', '--outputtype', action="store", dest="output_type", default=False,
                         help='set output representation [default="binarystl", "asciistl", "3mf"]')
-    parser.add_argument('-x', '--extended', action="store_true", dest="extended_mode", default=False,
+    parser.add_argument('-x ', '--extended', action="store_true", dest="extended_mode", default=False,
                         help="using more algorithms and examine more alignments")
-    parser.add_argument('-v', '--version', action="store_true", dest="version",
+    parser.add_argument('-v ', '--version', action="store_true", dest="version",
                         help="print version number and exit", default=False)
-    parser.add_argument('-r', '--result', action="store_true", dest="result",
+    parser.add_argument('-r ', '--result', action="store_true", dest="result",
                         help="show result of calculation and exit without creating output file",
                         default=False)
     parser.add_argument('-fs', '--favside', type=str, dest="favside",
                         help="favour one orientation with a vector and weighting, e.g.  '[[0,-1,2],3]'",
                         default=None)
-    parser.add_argument('-vol', '--volume', action="store_true", dest="volume",
-                        help="choose to minimise supported surface or volume of support material", default=False)
+    parser.add_argument('-min', '--minimize', action="store", dest="minimize", default="vol",
+                        help="choose to minimise overhanging surface [sur] or volume default=[vol] of support material")
     arguments = parser.parse_args()
 
     if arguments.version:
@@ -76,7 +56,14 @@ def getargs():
             arguments.inputfile = curpath + os.sep + "all.stl"
         except FileNotFoundError:
             return None
-
+    if arguments.minimize:
+        if "sur" in arguments.minimize.lower():
+            arguments.volume = False
+        elif "vol" in arguments.minimize.lower():
+            arguments.volume = True
+        else:
+            print(f"Can't understand input '-min {arguments.minimize}', using 'vol'.")
+            arguments.volume = True
     if arguments.output_type:
         # print(arguments.output_type)
         if "3mf" in arguments.output_type.lower():
@@ -159,8 +146,7 @@ if __name__ == "__main__":
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside,
-                          args.volume, **parameter)
+                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
                 info[part]["matrix"] = x.matrix
                 info[part]["tweaker_stats"] = x
             except (KeyboardInterrupt, SystemExit):
