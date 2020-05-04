@@ -1,26 +1,54 @@
 # -*- coding: utf-8 -*-
 
+import re
 import math
 from time import time, sleep
-import re
-import os
 from collections import Counter
 # upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
 
 
-# # Constants used:
-# self.VECTOR_TOL = 0.001  # To remove alignment duplicates, the vector tolerance is
-# # used to distinguish two vectors.
-# PLAFOND_ADV = 0.2  # Printing a plafond is known to be more effective than
-# # very step overhangs. This value sets the advantage in %.
-# self.FIRST_LAY_H = 0.25  # The initial layer of a print has an altitude > 0
-# # bottom layer and very bottom-near overhangs can be handled as similar.
-# self.NEGL_FACE_SIZE = 1  # The fast operation mode neglects facet sizes smaller than
-# # this value (in mm^2) for a better performance
-# ABSOLUTE_F = 100  # These values scale the the parameters bottom size,
-# RELATIVE_F = 1  # overhang size, and bottom contour length to get a robust
-# CONTOUR_F = 0.5  # value for the Unprintability
+# These parameter were minimized by the evolutionary algorithm
+# https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200414' on 100 objects
+# with a fitness of 4.514771324222876, and a miss-classification rate of 4.25
+PARAMETER = {
+    'ABSOLUTE_F': 98.5883768434822,
+    'RELATIVE_F': 1.162524130132582,
+    'CONTOUR_F': 0.1605628698074317,
+    'FIRST_LAY_H': 0.08473208766649207,
+    'TAR_A': 0.7015860182950739,
+    'TAR_B': 0.26931582120058184,
+    'TAR_C': 1.554247674370683,
+    'TAR_D': 0.44833952635629537,
+    'BOTTOM_F': 0.8840613107383717,
+    'PLAFOND_ADV': 0.24174313621949237,
+    'ANGLE_SCALE': 0.7254421358435629,
+    'ASCENT': 119.03812433302157,
+    'NEGL_FACE_SIZE': 0.43859512908527554,
+    'CONTOUR_AMOUNT': 0.012893512521961371
+}
+# https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200427_vol' on 100 objects
+# with a fitness of 5.45497, and a miss-classification rate of 4.5
+PARAMETER_VOL = {
+    "TAR_A": 0.02353,
+    "TAR_B": 0.1649,
+    "RELATIVE_F": 6.076,
+    "CONTOUR_F": 0.2403,
+    "BOTTOM_F": 1.03,
+    "TAR_C": 0.9634,
+    "TAR_D": 0.5623,
+    "TAR_E": 0.003744,
+    "FIRST_LAY_H": 0.08547,
+    "VECTOR_TOL": 0.003559,
+    "NEGL_FACE_SIZE": 0.4198,
+    "ASCENT": -0.4095,
+    "PLAFOND_ADV": 0.2729,
+    "CONTOUR_AMOUNT": 0.02088,
+    "OV_H": 1.572,
+    "height_offset": 2.889,
+    "height_log": 0.05288,
+    "height_log_k": 1.155
+}
 
 
 class Tweak:
@@ -38,35 +66,27 @@ class Tweak:
      vector with R.
     And the relative unprintability of the tweaked object. If this value is
      greater than 10, a support structure is suggested.
-        """
+    """
 
     def __init__(self, content, extended_mode=False, verbose=True,
                  show_progress=False, favside=None, min_volume=False, **parameter):
         # Load parameters
-        self.TAR_A = parameter["TAR_A"]
-        self.TAR_B = parameter["TAR_B"]
-        self.TAR_C = parameter["TAR_C"]
-        self.RELATIVE_F = parameter["RELATIVE_F"]
-        self.CONTOUR_F = parameter["CONTOUR_F"]
-        self.BOTTOM_F = parameter["BOTTOM_F"]
-        self.TAR_D = parameter["TAR_D"]
-        self.TAR_E = parameter["TAR_E"]
+        # parameter = PARAMETER
+        # if min_volume:
+        #     parameter.update(PARAMETER_VOL)
+        # else:
+        #     p = PARAMETER_VOL.copy()
+        #     p.update(parameter)
+        #     parameter = p
 
-        self.VECTOR_TOL = parameter["VECTOR_TOL"]
-        self.FIRST_LAY_H = parameter["FIRST_LAY_H"]
-        self.NEGL_FACE_SIZE = parameter["NEGL_FACE_SIZE"]
+        for k, v in parameter.items():
+            # print(f"{k} = {v}")
+            exec(f"self.{k} = {v}")
 
-        self.ASCENT = parameter["ASCENT"]
-        self.PLAFOND_ADV = parameter["PLAFOND_ADV"]
-        self.CONTOUR_AMOUNT = parameter["CONTOUR_AMOUNT"]
-        self.OV_H = parameter["OV_H"]
         if abs(self.OV_H - 2) < 0.1:  # set to nearby integers as they are faster
             self.OV_H = 2
         if abs(self.OV_H - 1) < 0.1:
             self.OV_H = 1
-        self.height_offset = parameter["height_offset"]
-        self.height_log = parameter["height_log"]
-        self.height_log_k = parameter["height_log_k"]
 
         self.extended_mode = extended_mode
         self.show_progress = show_progress
@@ -121,6 +141,9 @@ class Tweak:
         t_lit = time()
         progress = self.print_progress(progress)
 
+        # Remove the mesh structure as soon as it is not used anymore
+        del self.mesh
+
         # evaluate the best alignments and calculate the rotation parameters
         results = np.array(results)
         best_results = list(results[results[:, 4].argsort()])  # [:5]]  # previously, the best 5 alignments were stored
@@ -132,12 +155,12 @@ class Tweak:
 
         if verbose:
             print("""Time-stats of algorithm:
-  Preprocessing:    \t{pre:2f} s
-  Area Cumulation:  \t{ac:2f} s
-  Death Star:       \t{ds:2f} s
-  Lithography Time:  \t{lt:2f} s
-  Total Time:        \t{tot:2f} s""".format(pre=t_pre - t_start, ac=t_areacum - t_pre, ds=t_ds - t_areacum,
-                                            lt=t_lit - t_ds, tot=t_lit - t_start))
+          Preprocessing:    \t{pre:2f} s
+          Area Cumulation:  \t{ac:2f} s
+          Death Star:       \t{ds:2f} s
+          Lithography Time:  \t{lt:2f} s
+          Total Time:        \t{tot:2f} s""".format(pre=t_pre - t_start, ac=t_areacum - t_pre, ds=t_ds - t_areacum,
+                                                    lt=t_lit - t_ds, tot=t_lit - t_start))
 
         # The list best_5_results is of the form:
         # [[orientation0, bottom_area0, overhang_area0, contour_line_length, unprintability (gives the order),
@@ -167,17 +190,20 @@ class Tweak:
             min_volume (bool): Minimise volume of support material or supported surface area
         Returns:
             a value for the unprintability. The smaller, the better."""
-        # if min_volume:  # minimize the volume of support material
-        #     overhang /= 20  # a volume is of higher dimension, so the overhang have to be reduced
+        if min_volume:  # minimize the volume of support material
+            overhang /= 25  # a volume is of higher dimension, so the overhang have to be reduced
+            return (self.TAR_A * (overhang + self.TAR_B) + self.RELATIVE_F * (overhang + self.TAR_C) /
+                         (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom + self.TAR_E * overhang))
+        else:
+            return (self.TAR_A * ((overhang + self.TAR_B) / self.ABSOLUTE_F) + self.RELATIVE_F *
+                    (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom))
+
         #     unprintability = (overhang / self.ABSOLUTE_F
         #                       + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) * self.RELATIVE_F)
         #
         # else:  # minimize supported surfaces
         # unprintability = (overhang / self.ABSOLUTE_F
         #                   + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
-        unprintability = self.TAR_A * (overhang + self.TAR_B) + self.RELATIVE_F * (overhang + self.TAR_C)\
-                         / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom + self.TAR_E * overhang)
-        return unprintability
 
     def preprocess(self, content):
         """The Mesh format gets preprocessed for a better performance and stored into self.mesh
@@ -260,7 +286,7 @@ class Tweak:
 
         # Filter the aligning orientations
         diff = np.subtract(self.mesh[:, 0, :], side)
-        align = np.sum(diff * diff, axis=1) < 0.7654  # 0.7654, ANGLE_SCALE ist around 0.1
+        align = np.sum(diff * diff, axis=1) < self.ANGLE_SCALE  # 0.7654, ANGLE_SCALE ist around 0.1
         mesh_not_align = self.mesh[np.logical_not(align)]
         mesh_align = self.mesh[align]
         mesh_align[:, 5, 0] = f * mesh_align[:, 5, 0]  # weight aligning orientations
@@ -396,7 +422,6 @@ class Tweak:
         Returns:
             the total bottom size, overhang size and contour length of the mesh
         """
-        # ascent = np.cos(self.ASCENT * np.pi / 180)
         anti_orient = -np.array(orientation)
         total_min = np.amin(self.mesh[:, 4, :])
 
@@ -437,7 +462,7 @@ class Tweak:
                 # improved performance by finding maximum using the multiplication method, see:
                 # https://stackoverflow.com/questions/32109319/how-to-implement-the-relu-function-in-numpy
                 inner = np.inner(overhangs[:, 0, :], orientation) - self.ASCENT
-                overhang = 2 * np.sum(overhangs[:, 5, 0] * np.abs(inner * (inner < 0)) ** self.OV_H)
+                overhang = 2 * np.sum(overhangs[:, 5, 0] * np.abs(inner * (inner < 0)) ** 2)
             overhang -= self.PLAFOND_ADV * plafond
 
         else:
