@@ -153,14 +153,14 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
             header = "Tweaked on {}".format(time.strftime("%a %d %b %Y %H:%M:%S")
                                             ).encode().ljust(79, b" ") + b"\n"
             for part, content in objects.items():
-                mesh = objects[part]["mesh"]
+                partlength = int(len(objects[part]["mesh"]) / 3)
                 mesh = self.rotate_bin_stl(info[part]["matrix"], mesh)
 
                 if len(objects.keys()) == 1:
                     outname = outputfile
                 else:
                     outname = ".".join(outputfile.split(".")[:-1]) + "_{}.stl".format(part)
-                length = struct.pack("<I", int(len(mesh) / 3))
+                length = struct.pack("<I", partlength)
                 with open(outname, 'wb') as outfile:
                     outfile.write(bytearray(header + length + b"".join(mesh)))
 
