@@ -18,21 +18,6 @@ else:
 __author__ = "Christoph Schranz, Salzburg Research"
 __version__ = "3.9"
 
-# parameter = dict({"VECTOR_TOL": 0.001, "PLAFOND_ADV": 0.2, "FIRST_LAY_H": 0.25, "NEGL_FACE_SIZE": 1,
-#                   "ABSOLUTE_F": 100, "RELATIVE_F": 1, "CONTOUR_F": 0.5})
-parameter_tuples = [("TAR_P1", 1.0), ("TAR_P2", 1.0), ("TAR_P3", 1.0), ("TAR_P4", 1.0), ("TAR_P5", 1.0),
-                    ("TAR_Q1", 1.0), ("TAR_Q2", 1.0), ("TAR_Q3", 1.0), ("TAR_Q4", 1.0), ("TAR_Q5", 1.0),("TAR_Q6", 1.0),
-                    ("PLAFOND_ADV_A", 0.01), ("PLAFOND_ADV_B", 0.2), ("PLAFOND_ADV_C", 0.01), ("FIRST_LAY_H", 0.1),
-                    ("ANGLE_SCALE", 0.1), ("ASCENT", 0.1), ("NEGL_FACE_SIZE", 1.0), ("CONTOUR_AMOUNT", 0.01)]
-parameter = dict(parameter_tuples)
-
-# parametrize target_function
-# angle
-# constant in line: align = np.sum(diff * diff, axis=1) < 0.7654
-# ascent in line: ascent = np.cos(120 * np.pi / 180)
-# add non-linearity in: plafond = np.sum(plafonds[:, 5, 0])
-# and: bottom = np.sum(bottoms[:, 5, 0])
-
 
 def getargs():
     parser = argparse.ArgumentParser(description="Orientation tool for better 3D prints")
@@ -166,8 +151,7 @@ if __name__ == "__main__":
         else:
             try:
                 cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume,
-                          **parameter)
+                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
                 info[part]["matrix"] = x.matrix
                 info[part]["tweaker_stats"] = x
             except (KeyboardInterrupt, SystemExit):
