@@ -12,20 +12,24 @@ import numpy as np
 # https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200414' on 100 objects
 # with a fitness of 4.514771324222876, and a miss-classification rate of 4.25
 PARAMETER = {
-    'ABSOLUTE_F': 98.5883768434822,
-    'RELATIVE_F': 1.162524130132582,
-    'CONTOUR_F': 0.1605628698074317,
-    'FIRST_LAY_H': 0.08473208766649207,
-    'TAR_A': 0.7015860182950739,
-    'TAR_B': 0.26931582120058184,
-    'TAR_C': 1.554247674370683,
-    'TAR_D': 0.44833952635629537,
-    'BOTTOM_F': 0.8840613107383717,
-    'PLAFOND_ADV': 0.24174313621949237,
-    'ANGLE_SCALE': 0.7254421358435629,
-    'ASCENT': 119.03812433302157,
-    'NEGL_FACE_SIZE': 0.43859512908527554,
-    'CONTOUR_AMOUNT': 0.012893512521961371
+    "TAR_A": 0.023251193283878126,
+    "TAR_B": 0.17967732044591803,
+    "RELATIVE_F": 11.250931864115714,
+    "CONTOUR_F": 0.219523237806102,
+    "BOTTOM_F": 1.3206227038470124,
+    "TAR_C": -0.016564249433447253,
+    "TAR_D": 1.0592490333488807,
+    "TAR_E": 0.011503545133447014,
+    "FIRST_LAY_H": 0.04754881938390257,
+    "VECTOR_TOL": -0.0008385913582234466,
+    "NEGL_FACE_SIZE": 0.4737309463791554,
+    "ASCENT": -0.07809801382985776,
+    "PLAFOND_ADV": 0.059937025927212395,
+    "CONTOUR_AMOUNT": 0.018242751444131886,
+    "OV_H": 2.574100894603089,
+    "height_offset": 2.372824083342488,
+    "height_log": 0.04137517666768212,
+    "height_log_k": 1.9325457851679673
 }
 # https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200427_vol' on 100 objects
 # with a fitness of 5.45497, and a miss-classification rate of 4.5
@@ -195,7 +199,7 @@ class Tweak:
             return (self.TAR_A * (overhang + self.TAR_B) + self.RELATIVE_F * (overhang + self.TAR_C) /
                          (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom + self.TAR_E * overhang))
         else:
-            return (self.TAR_A * ((overhang + self.TAR_B) / self.ABSOLUTE_F) + self.RELATIVE_F *
+            return (self.TAR_A * (overhang + self.TAR_B) + self.RELATIVE_F *
                     (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom))
 
         #     unprintability = (overhang / self.ABSOLUTE_F
@@ -507,17 +511,16 @@ class Tweak:
         Returns:
             rotation axis, rotation angle, rotational matrix.
         """
-        if np.allclose(bestside[0], np.array([0, 0, -1]), atol=self.VECTOR_TOL):
+        if np.allclose(bestside[0], np.array([0, 0, -1]), atol=abs(self.VECTOR_TOL)):
             rotation_axis = [1, 0, 0]
             phi = np.pi
-        elif np.allclose(bestside[0], np.array([0, 0, 1]), atol=self.VECTOR_TOL):
+        elif np.allclose(bestside[0], np.array([0, 0, 1]), atol=abs(self.VECTOR_TOL)):
             rotation_axis = [1, 0, 0]
             phi = 0
         else:
-            phi = float("{:2f}".format(np.pi - np.arccos(-bestside[0][2])))
-            rotation_axis = [-bestside[0][1], bestside[0][0], 0]
-            rotation_axis = [i / np.sum(np.power(rotation_axis, 2), axis=-1) ** 0.5 for i in rotation_axis]
-            rotation_axis = np.array([float("{:2f}".format(i)) for i in rotation_axis], np.float64)
+            phi = np.pi - np.arccos(-bestside[0][2])
+            rotation_axis = [-bestside[0][1], bestside[0][0], 0]  # the z-axis is fixed to 0 for this rotation
+            rotation_axis = [i / np.linalg.norm(rotation_axis) for i in rotation_axis]  # normalization
 
         v = rotation_axis
         rotational_matrix = np.array([[v[0] * v[0] * (1 - math.cos(phi)) + math.cos(phi),
