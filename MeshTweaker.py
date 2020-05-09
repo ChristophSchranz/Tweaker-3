@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import os
 import re
 import math
 from time import time, sleep
@@ -73,8 +73,8 @@ class Tweak:
     """
 
     def __init__(self, content, extended_mode=False, verbose=True,
-                 show_progress=False, favside=None, min_volume=False):
-        # Load parameters
+                 show_progress=False, favside=None, min_volume=False, progress_callback=None):
+        # Load parameters,
         if min_volume:
             parameter = PARAMETER_VOL
         else:
@@ -89,6 +89,7 @@ class Tweak:
         if abs(self.OV_H - 1) < 0.1:
             self.OV_H = 1
 
+        self.progress_callback = progress_callback
         self.extended_mode = extended_mode
         self.show_progress = show_progress
         z_axis = -np.array([0, 0, 1], dtype=np.float64)
@@ -96,9 +97,8 @@ class Tweak:
 
         # Preprocess the input mesh format.
         t_start = time()
-        progress = 0  # progress in percent of tweaking
-        progress = self.print_progress(progress)
-
+        self._progress = 0  # progress in percent of tweaking
+        self.update_progress(self._progress + 18)
         # Load mesh from file into class variable
         self.mesh = self.preprocess(content)
 
@@ -106,13 +106,12 @@ class Tweak:
         if favside:
             self.favour_side(favside)
         t_pre = time()
-        progress = self.print_progress(progress)
-
+        self.update_progress(self._progress + 18)
         # Searching promising orientations:
         orientations += self.area_cumulation(10)
 
         t_areacum = time()
-        progress = self.print_progress(progress)
+        self.update_progress(self._progress + 18)
         if extended_mode:
             orientations += self.death_star(12)
             orientations += self.add_supplements()
@@ -124,8 +123,7 @@ class Tweak:
                   ("Alignment:", "Bottom:", "Overhang:", "Contour:", "Unpr.:"))
 
         t_ds = time()
-        progress = self.print_progress(progress)
-
+        self.update_progress(self._progress + 18)
         # Calculate the unprintability for each orientation found in the gathering algorithms
         results = list()
         for side in orientations:
@@ -140,7 +138,7 @@ class Tweak:
                       % (str(np.around(orientation, decimals=4)),
                          bottom, overhang, contour, unprintability))
         t_lit = time()
-        progress = self.print_progress(progress)
+        self.update_progress(self._progress + 18)
 
         # Remove the mesh structure as soon as it is not used anymore
         del self.mesh
@@ -155,13 +153,12 @@ class Tweak:
             best_results[i].append([[v[0], v[1], v[2]], phi, matrix])
 
         if verbose:
-            print("""Time-stats of algorithm:
-          Preprocessing:    \t{pre:2f} s
-          Area Cumulation:  \t{ac:2f} s
-          Death Star:       \t{ds:2f} s
-          Lithography Time:  \t{lt:2f} s
-          Total Time:        \t{tot:2f} s""".format(pre=t_pre - t_start, ac=t_areacum - t_pre, ds=t_ds - t_areacum,
-                                                    lt=t_lit - t_ds, tot=t_lit - t_start))
+            print(f"""Time-stats of algorithm:
+          Preprocessing:    \t{(t_pre - t_start):2f} s
+          Area Cumulation:  \t{(t_areacum - t_pre):2f} s
+          Death Star:       \t{(t_ds - t_areacum):2f} s
+          Lithography Time:  \t{(t_lit - t_ds):2f} s
+          Total Time:        \t{(t_lit - t_start):2f} s""")
 
         # The list best_5_results is of the form:
         # [[orientation0, bottom_area0, overhang_area0, contour_line_length, unprintability (gives the order),
@@ -198,12 +195,6 @@ class Tweak:
         else:
             return (self.TAR_A * (overhang + self.TAR_B) + self.RELATIVE_F *
                     (overhang + self.TAR_C) / (self.TAR_D + self.CONTOUR_F * contour + self.BOTTOM_F * bottom))
-        #     unprintability = (overhang / self.ABSOLUTE_F
-        #                       + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) * self.RELATIVE_F)
-        #
-        # else:  # minimize supported surfaces
-        # unprintability = (overhang / self.ABSOLUTE_F
-        #                   + (overhang + 1) / (1 + self.CONTOUR_F * contour + bottom) / self.RELATIVE_F)
 
     def preprocess(self, content):
         """The Mesh format gets preprocessed for a better performance and stored into self.mesh
@@ -492,13 +483,13 @@ class Tweak:
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return bottom, overhang, contour
 
-    def print_progress(self, progress):
-        progress += 18
+    def update_progress(self, new_progress):
+        self._progress = new_progress
         if self.show_progress:
-            # Display progress on a single console line.... (assuming python3 here, as no future imported at the top)
-            print("\nProgress is: {}".format(progress), end="")
-
-        return progress
+            os.system('cls')
+            print("Progress is: {progress} ".format(progress = new_progress))
+        if self.progress_callback:
+            self.progress_callback(new_progress)
 
     def euler(self, bestside):
         """Calculating euler rotation parameters and rotational matrix.
