@@ -180,7 +180,7 @@ Best,\nyour Auto-Rotate Developer\n""".format(ex_type.__name__, str(ex), stack_t
 
         # upgrade numpy with: "pip install numpy --upgrade"
         mesh = np.matmul(mesh, rotation_matrix)
-        
+
         v0 = mesh[:, 0, :]
         v1 = mesh[:, 1, :]
         v2 = mesh[:, 2, :]
