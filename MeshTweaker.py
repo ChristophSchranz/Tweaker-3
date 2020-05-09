@@ -9,8 +9,8 @@ import numpy as np
 
 
 # These parameter were minimized by the evolutionary algorithm
-# https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200414' on 100 objects
-# with a fitness of 4.514771324222876, and a miss-classification rate of 4.25
+# https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200427_vol' on 100 objects
+# with a fitness of 5.10, and a miss-classification rate of 4.00
 PARAMETER = {
     "TAR_A": 0.023251193283878126,
     "TAR_B": 0.17967732044591803,
