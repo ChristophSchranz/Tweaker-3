@@ -10,7 +10,7 @@ import numpy as np
 
 # These parameter were minimized by the evolutionary algorithm
 # https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200414' on 100 objects
-# with a fitness of 4.514771324222876, and a miss-classification rate of 4.25
+# with a fitness of 5.10246, and a miss-classification rate of 4.0
 PARAMETER = {
     "TAR_A": 0.023251193283878126,
     "TAR_B": 0.17967732044591803,
@@ -32,26 +32,26 @@ PARAMETER = {
     "height_log_k": 1.9325457851679673
 }
 # https://github.com/ChristophSchranz/Tweaker-3_optimize-using-ea, branch ea-optimize_20200427_vol' on 100 objects
-# with a fitness of 5.45497, and a miss-classification rate of 4.5
+# with a fitness of 4.06166, and a miss-classification rate of 3.5
 PARAMETER_VOL = {
-    "TAR_A": 0.02353,
-    "TAR_B": 0.1649,
-    "RELATIVE_F": 6.076,
-    "CONTOUR_F": 0.2403,
-    "BOTTOM_F": 1.03,
-    "TAR_C": 0.9634,
-    "TAR_D": 0.5623,
-    "TAR_E": 0.003744,
-    "FIRST_LAY_H": 0.08547,
-    "VECTOR_TOL": 0.003559,
-    "NEGL_FACE_SIZE": 0.4198,
-    "ASCENT": -0.4095,
-    "PLAFOND_ADV": 0.2729,
-    "CONTOUR_AMOUNT": 0.02088,
-    "OV_H": 1.572,
-    "height_offset": 2.889,
-    "height_log": 0.05288,
-    "height_log_k": 1.155
+    "TAR_A": 0.012826785357111374,
+    "TAR_B": 0.1774847296275851,
+    "RELATIVE_F": 6.610621027964314,
+    "CONTOUR_F": 0.23228623269775997,
+    "BOTTOM_F": 1.167152017941474,
+    "TAR_C": 0.24308070476924726,
+    "TAR_D": 0.6284515508160871,
+    "TAR_E": 0.032157292647062234,
+    "FIRST_LAY_H": 0.029227991916155015,
+    "VECTOR_TOL": -0.0011163303070972383,
+    "NEGL_FACE_SIZE": 0.4928696161029859,
+    "ASCENT": -0.23897449119622627,
+    "PLAFOND_ADV": 0.04079208948120519,
+    "CONTOUR_AMOUNT": 0.0101472219892684,
+    "OV_H": 1.0370178217794535,
+    "height_offset": 2.7417608343142073,
+    "height_log": 0.06442030687034085,
+    "height_log_k": 0.3933594673063997
 }
 
 
@@ -73,12 +73,13 @@ class Tweak:
     """
 
     def __init__(self, content, extended_mode=False, verbose=True,
-                 show_progress=False, favside=None, min_volume=False):
+                 show_progress=False, favside=None, min_volume=False, parameter=None):
         # Load parameters
-        if min_volume:
-            parameter = PARAMETER_VOL
-        else:
-            parameter = PARAMETER
+        if parameter is None:
+            if min_volume:
+                parameter = PARAMETER_VOL
+            else:
+                parameter = PARAMETER
 
         for k, v in parameter.items():
             # print(f"{k} = {v}")
