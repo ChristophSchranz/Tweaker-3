@@ -6,7 +6,10 @@ import os
 import struct
 import time
 import traceback
-import ThreeMF
+try:
+    import ThreeMF
+except ModuleNotFoundError:
+    from . import ThreeMF
 # upgrade numpy with: "pip install numpy --upgrade"
 import numpy as np
 
