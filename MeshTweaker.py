@@ -82,8 +82,7 @@ class Tweak:
                 parameter = PARAMETER
 
         for k, v in parameter.items():
-            # print(f"{k} = {v}")
-            exec(f"self.{k} = {v}")
+            setattr(self, k, v)
 
         if abs(self.OV_H - 2) < 0.1:  # set to nearby integers as they are faster
             self.OV_H = 2
@@ -153,13 +152,15 @@ class Tweak:
             v, phi, matrix = self.euler(align)
             best_results[i].append([[v[0], v[1], v[2]], phi, matrix])
 
-        if verbose:
-            print(f"""Time-stats of algorithm:
-          Preprocessing:    \t{(t_pre - t_start):2f} s
-          Area Cumulation:  \t{(t_areacum - t_pre):2f} s
-          Death Star:       \t{(t_ds - t_areacum):2f} s
-          Lithography Time:  \t{(t_lit - t_ds):2f} s
-          Total Time:        \t{(t_lit - t_start):2f} s""")
+            if verbose:
+                print("""Time-stats of algorithm:
+        Preprocessing:    \t{pre:2f} s
+        Area Cumulation:  \t{ac:2f} s
+        Death Star:       \t{ds:2f} s
+        Lithography Time:  \t{lt:2f} s
+        Total Time:        \t{tot:2f} s""".format(
+                    pre=t_pre - t_start, ac=t_areacum - t_pre, ds=t_ds - t_areacum,
+                    lt=t_lit - t_ds, tot=t_lit - t_start))
 
         # The list best_5_results is of the form:
         # [[orientation0, bottom_area0, overhang_area0, contour_line_length, unprintability (gives the order),
@@ -273,8 +274,7 @@ class Tweak:
         norm = np.sqrt(np.sum(np.array([x, y, z], dtype=np.float64) ** 2))
         side = np.array([x, y, z], dtype=np.float64) / norm
 
-        print("You favour the side {} with a factor of {}".format(
-            side, f))
+        print("You favour the side {} with a factor of {}".format(side, f))
 
         # Filter the aligning orientations
         diff = np.subtract(self.mesh[:, 0, :], side)

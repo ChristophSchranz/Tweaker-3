@@ -67,7 +67,7 @@ def getargs():
         elif "vol" in arguments.minimize.lower():
             arguments.volume = True
         else:
-            print(f"Can't understand input '-min {arguments.minimize}', using 'vol'.")
+            print("Can't understand input '-min {}', using 'vol'.".format(arguments.minimize))
             arguments.volume = True
     if arguments.output_type:
         # print(arguments.output_type)
