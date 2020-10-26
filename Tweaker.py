@@ -16,7 +16,7 @@ else:
 # You can preset the default model in line 42
 
 __author__ = "Christoph Schranz, Salzburg Research"
-__version__ = "3.9"
+__version__ = "3.9, October 2020"
 
 
 def getargs():

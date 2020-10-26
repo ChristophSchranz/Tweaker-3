@@ -152,15 +152,15 @@ class Tweak:
             v, phi, matrix = self.euler(align)
             best_results[i].append([[v[0], v[1], v[2]], phi, matrix])
 
-            if verbose:
-                print("""Time-stats of algorithm:
-        Preprocessing:    \t{pre:2f} s
-        Area Cumulation:  \t{ac:2f} s
-        Death Star:       \t{ds:2f} s
-        Lithography Time:  \t{lt:2f} s
-        Total Time:        \t{tot:2f} s""".format(
-                    pre=t_pre - t_start, ac=t_areacum - t_pre, ds=t_ds - t_areacum,
-                    lt=t_lit - t_ds, tot=t_lit - t_start))
+        if verbose:
+            print("""Time-stats of algorithm:
+    Preprocessing:    \t{pre:2f} s
+    Area Cumulation:  \t{ac:2f} s
+    Death Star:       \t{ds:2f} s
+    Lithography Time:  \t{lt:2f} s
+    Total Time:        \t{tot:2f} s""".format(
+                pre=t_pre - t_start, ac=t_areacum - t_pre, ds=t_ds - t_areacum,
+                lt=t_lit - t_ds, tot=t_lit - t_start))
 
         # The list best_5_results is of the form:
         # [[orientation0, bottom_area0, overhang_area0, contour_line_length, unprintability (gives the order),
@@ -244,7 +244,7 @@ class Tweak:
         # remove small facets (these are essential for contour calculation)
         if self.NEGL_FACE_SIZE > 0:
             negl_size = [0.1 * x if self.extended_mode else x for x in [self.NEGL_FACE_SIZE]][0]
-            filtered_mesh = mesh[mesh[:, 5, 0] > negl_size]
+            filtered_mesh = mesh[np.where(mesh[:, 5, 0] > negl_size)]
             if len(filtered_mesh) > 100:
                 mesh = filtered_mesh
 
@@ -300,7 +300,6 @@ class Tweak:
             orient[tuple(alignments[index])] += self.mesh[index, 5, 0]
 
         top_n = orient.most_common(best_n)
-        top_n = [[list(el[0]), float("{:2f}".format(el[1]))] for el in top_n]
         sleep(0)  # Yield, so other threads get a bit of breathing space.
         return top_n
 
@@ -320,7 +319,7 @@ class Tweak:
         iterations = int(np.ceil(20000 / (mesh_len + 100)))
 
         vertexes = self.mesh[:mesh_len, 1:4, :]
-        orientations = list()
+        tot_normalized_orientations = np.zeros((iterations * mesh_len + 1, 3))
         for i in range(iterations):
             two_vertexes = vertexes[:, np.random.choice(3, 2, replace=False)]
             vertex_0 = two_vertexes[:, 0, :]
@@ -339,19 +338,25 @@ class Tweak:
                 normalized_orientations = np.around(np.true_divide(normals, lengths),
                                                     decimals=6)
 
-            # append hashable tuples to list
-            orientations += [tuple(face) for face in normalized_orientations]
+            tot_normalized_orientations[mesh_len * i:mesh_len * (i + 1)] = normalized_orientations
             sleep(0)  # Yield, so other threads get a bit of breathing space.
 
         # search the most common orientations
+        orientations = np.inner(np.array([1, 1e3, 1e6]), tot_normalized_orientations)
         orient = Counter(orientations)
         top_n = orient.most_common(best_n)
         top_n = list(filter(lambda x: x[1] > 2, top_n))
 
-        top_n = [[list(v[0]), v[1]] for v in top_n]
+        candidate = list()
+        for sum_side, count in top_n:
+            face_unique, face_count = np.unique(tot_normalized_orientations[orientations == sum_side], axis=0,
+                                                return_counts=True)
+            candidate += [[list(face_unique[i]), count] for i, count in enumerate(face_count)]
+        # Filter non-injective singles
+        candidate = list(filter(lambda x: x[1] >= 2, candidate))
         # also add anti-parallel orientations
-        top_n += [[list((-v[0][0], -v[0][1], -v[0][2])), v[1]] for v in top_n]
-        return top_n
+        candidate += [[list((-v[0][0], -v[0][1], -v[0][2])), v[1]] for v in candidate]
+        return candidate
 
     @staticmethod
     def add_supplements():
@@ -414,33 +419,27 @@ class Tweak:
         Returns:
             the total bottom size, overhang size and contour length of the mesh
         """
-        anti_orient = -np.array(orientation)
         total_min = np.amin(self.mesh[:, 4, :])
 
         # filter bottom area
-        bottoms = self.mesh[self.mesh[:, 5, 1] < total_min + self.FIRST_LAY_H]
-        if len(bottoms) > 0:
-            bottom = np.sum(bottoms[:, 5, 0])
-        else:
-            bottom = 0
+        bottom = np.sum(self.mesh[np.where(self.mesh[:, 5, 1] < total_min + self.FIRST_LAY_H), 5, 0])
+        # # equal than:
+        # bottoms = mesh[np.where(mesh[:, 5, 1] < total_min + FIRST_LAY_H)]
+        # if len(bottoms) > 0: bottom = np.sum(bottoms[:, 5, 0])
+        # else: bottom = 0
 
         # filter overhangs
-        overhangs = self.mesh[np.inner(self.mesh[:, 0, :], orientation) < self.ASCENT]
-        overhangs = overhangs[overhangs[:, 5, 1] > (total_min + self.FIRST_LAY_H)]
+        overhangs = self.mesh[np.where(np.inner(self.mesh[:, 0, :], orientation) < self.ASCENT)]
+        overhangs = overhangs[np.where(overhangs[:, 5, 1] > (total_min + self.FIRST_LAY_H))]
 
         if self.extended_mode:
-            plafonds = overhangs[(overhangs[:, 0, :] == anti_orient).all(axis=1)]
-            if len(plafonds) > 0:
-                plafond = np.sum(plafonds[:, 5, 0])
-            else:
-                plafond = 0
+            plafond = np.sum(overhangs[(overhangs[:, 0, :] == -orientation).all(axis=1), 5, 0])
         else:
             plafond = 0
 
         if len(overhangs) > 0:
             if min_volume:
-                centers = overhangs[:, 1:4, :].sum(axis=1) / 3
-                heights = np.inner(centers[:], orientation) - total_min
+                heights = np.inner(overhangs[:, 1:4, :].mean(axis=1), orientation) - total_min
 
                 inner = np.inner(overhangs[:, 0, :], orientation) - self.ASCENT
                 # overhang = np.sum(heights * overhangs[:, 5, 0] * np.abs(inner * (inner < 0)) ** 2)
@@ -463,7 +462,7 @@ class Tweak:
         # filter the total length of the bottom area's contour
         if self.extended_mode:
             # contours = self.mesh[total_min+self.FIRST_LAY_H < self.mesh[:, 5, 1]]
-            contours = self.mesh[self.mesh[:, 5, 2] < total_min + self.FIRST_LAY_H]
+            contours = self.mesh[np.where(self.mesh[:, 5, 2] < total_min + self.FIRST_LAY_H)]
 
             if len(contours) > 0:
                 conlen = np.arange(len(contours))
