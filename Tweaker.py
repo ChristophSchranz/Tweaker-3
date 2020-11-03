@@ -48,7 +48,7 @@ def getargs():
     arguments = parser.parse_args()
 
     if arguments.version:
-        print("Tweaker 3.9, (23 April 2020, parameter are optimized by an evolutionary algorithm)")
+        print("Tweaker 3.9, (November 2020, parameter are optimized by an evolutionary algorithm)")
         return None
 
     if not arguments.inputfile:

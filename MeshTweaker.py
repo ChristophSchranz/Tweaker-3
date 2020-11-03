@@ -294,10 +294,9 @@ class Tweak:
         Returns:
             list of the common orientation-tuples.
         """
-        alignments = self.mesh[:, 0, :]
         orient = Counter()
         for index in range(len(self.mesh)):  # Accumulate area-vectors
-            orient[tuple(alignments[index])] += self.mesh[index, 5, 0]
+            orient[tuple(self.mesh[index, 0] + 0.0)] += self.mesh[index, 5, 0]
 
         top_n = orient.most_common(best_n)
         sleep(0)  # Yield, so other threads get a bit of breathing space.
