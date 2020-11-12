@@ -41,7 +41,7 @@ def getargs():
                         help="show result of calculation and exit without creating output file",
                         default=False)
     parser.add_argument('-fs', '--favside', type=str, dest="favside",
-                        help="favour one orientation with a vector and weighting, e.g.  '[[0,-1,2],3]'",
+                        help="favour one orientation with a vector and weighting, e.g.  '[[0.,-1.,2.],3.]'",
                         default=None)
     parser.add_argument('-min', '--minimize', action="store", dest="minimize", default="vol",
                         help="choose to minimise overhanging surface [sur] or volume default=[vol] of support material")

@@ -373,20 +373,21 @@ class Tweak:
 
     @staticmethod
     def remove_duplicates(old_orients):
-        """Removing duplicate and similar orientations.
+        """
+        Removing duplicate and similar orientations.
         Args:
             old_orients (list): list of faces
         Returns:
             Unique orientations"""
         alpha = 5  # in degrees
-        tol_angle = np.sin(alpha * np.pi / 180)
+        tol_dist = alpha * np.pi / 180  # nearly same as with sin
         orientations = list()
         for i in old_orients:
             duplicate = None
             for j in orientations:
-                # redundant vectors have an angle smaller than
-                # alpha = arcsin(atol). atol=0.087 -> alpha = 5 degrees
-                if np.allclose(i[0], j[0], atol=tol_angle):
+                # redundant vectors have an difference smaller than
+                # dist = ||y-x|| < tol_dist-> alpha = 5 degrees
+                if (i[0][0] - j[0][0]) ** 2 + (i[0][1] - j[0][1]) ** 2 + (i[0][2] - j[0][2]) ** 2 < tol_dist ** 2:
                     duplicate = True
                     break
             if duplicate is None:
