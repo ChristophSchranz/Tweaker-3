@@ -279,7 +279,7 @@ class Tweak:
 
         # Filter the aligning orientations
         diff = np.subtract(self.mesh[:, 0, :], side)
-        align = np.sum(diff * diff, axis=1) < 0.7654  # former ANGLE_SCALE
+        align = np.sum(diff * diff, axis=1) < 0.7654  # former ANGLE_SCALE, set static to 43.85°
         mesh_not_align = self.mesh[np.logical_not(align)]
         mesh_align = self.mesh[align]
         mesh_align[:, 5, 0] = f * mesh_align[:, 5, 0]  # weight aligning orientations
