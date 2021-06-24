@@ -170,11 +170,13 @@ class Tweak:
         if len(results) > 0:
             self.alignment = results[0][:3]
             self.rotation_axis, self.rotation_angle, self.matrix = self.euler(results[0][0:3])
+            self.euler_parameter = [self.rotation_axis, self.rotation_angle]
             self.bottom_area = results[0][3]
             self.overhang_area = results[0][4]
             self.contour = results[0][5]
             self.unprintability = results[0][6]
             self.all_orientations = results
+            self.best_5 = results[:5]
             self.time = t_lit - t_start
 
         # Finish with a nice clean newline, as print_progress rewrites updates without advancing below.
