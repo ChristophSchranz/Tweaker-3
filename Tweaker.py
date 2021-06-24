@@ -161,7 +161,7 @@ if __name__ == "__main__":
             if args.result or args.verbose:
                 print("Result-stats:")
                 print(" Tweaked Z-axis: \t{}".format(x.alignment))
-                print(" Axis, angle:   \t{}".format(x.euler_parameter))
+                print(" Axis {}, \tangle: {}".format(x.rotation_axis, x.rotation_angle))
                 print(""" Rotation matrix: 
             {:2f}\t{:2f}\t{:2f}
             {:2f}\t{:2f}\t{:2f}

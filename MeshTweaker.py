@@ -119,38 +119,39 @@ class Tweak:
 
         if verbose:
             print("Examine {} orientations:".format(len(orientations)))
-            print("  %-26s %-10s%-10s%-10s%-10s " %
+            print("  %-30s %-10s%-10s%-10s%-10s " %
                   ("Alignment:", "Bottom:", "Overhang:", "Contour:", "Unpr.:"))
 
         t_ds = time()
         self.update_progress(self._progress + 18)
         # Calculate the unprintability for each orientation found in the gathering algorithms
-        results = list()
-        for side in orientations:
+        results = np.empty((len(orientations), 7), dtype=np.float64)
+        for side_idx, side in enumerate(orientations):
             orientation = -1 * np.array(side[0], dtype=np.float64)
+            results[side_idx, 0] = orientation[0]
+            results[side_idx, 1] = orientation[1]
+            results[side_idx, 2] = orientation[2]
 
             self.project_vertices(orientation)
             bottom, overhang, contour = self.calc_overhang(orientation, min_volume=min_volume)
+            results[side_idx, 3] = bottom
+            results[side_idx, 4] = overhang
+            results[side_idx, 5] = contour
+
             unprintability = self.target_function(bottom, overhang, contour, min_volume=min_volume)
-            results.append([orientation, bottom, overhang, contour, unprintability])
-            if verbose:
-                print("  %-26s %-10.2f%-10.2f%-10.2f%-10.4g "
-                      % (str(np.around(orientation, decimals=4)),
-                         bottom, overhang, contour, unprintability))
-        t_lit = time()
+            results[side_idx, 6] = unprintability
         self.update_progress(self._progress + 18)
 
         # Remove the mesh structure as soon as it is not used anymore
         del self.mesh
 
         # evaluate the best alignments and calculate the rotation parameters
-        results = np.array(results)
-        best_results = list(results[results[:, 4].argsort()])  # [:5]]  # previously, the best 5 alignments were stored
-
-        for i, align in enumerate(best_results):
-            best_results[i] = list(best_results[i])
-            v, phi, matrix = self.euler(align)
-            best_results[i].append([[v[0], v[1], v[2]], phi, matrix])
+        results = results[results[:, -1].argsort()]  # [:5]]  # previously, the best 5 alignments were stored
+        if verbose:
+            for idx in range(results.shape[0]):
+                print("  %-10.4f%-10.4f%-10.4f  %-10.2f%-10.2f%-10.2f%-10.4f "
+                      % (tuple(results[idx])))
+        t_lit = time()
 
         if verbose:
             print("""Time-stats of algorithm:
@@ -166,15 +167,15 @@ class Tweak:
         # [[orientation0, bottom_area0, overhang_area0, contour_line_length, unprintability (gives the order),
         #       [euler_vector, euler_angle (in rad), rotation matrix]],
         #   orientation1, ..
-        if len(best_results) > 0:
-            self.euler_parameter = best_results[0][5][:2]
-            self.matrix = best_results[0][5][2]
-            self.alignment = best_results[0][0]
-            self.bottom_area = best_results[0][1]
-            self.overhang_area = best_results[0][2]
-            self.contour = best_results[0][3]
-            self.unprintability = best_results[0][4]
-            self.best_5 = best_results
+        if len(results) > 0:
+            self.alignment = results[0][:3]
+            self.rotation_axis, self.rotation_angle, self.matrix = self.euler(results[0][0:3])
+            self.bottom_area = results[0][3]
+            self.overhang_area = results[0][4]
+            self.contour = results[0][5]
+            self.unprintability = results[0][6]
+            self.all_orientations = results
+            self.time = t_lit - t_start
 
         # Finish with a nice clean newline, as print_progress rewrites updates without advancing below.
         if show_progress:
@@ -278,7 +279,7 @@ class Tweak:
 
         # Filter the aligning orientations
         diff = np.subtract(self.mesh[:, 0, :], side)
-        align = np.sum(diff * diff, axis=1) < self.ANGLE_SCALE  # 0.7654, ANGLE_SCALE ist around 0.1
+        align = np.sum(diff * diff, axis=1) < 0.7654  # former ANGLE_SCALE
         mesh_not_align = self.mesh[np.logical_not(align)]
         mesh_align = self.mesh[align]
         mesh_align[:, 5, 0] = f * mesh_align[:, 5, 0]  # weight aligning orientations
@@ -494,31 +495,49 @@ class Tweak:
     def euler(self, bestside):
         """Calculating euler rotation parameters and rotational matrix.
         Args:
-            bestside (np.array): vector of the best orientation (3 x 3).
+            bestside (np.array): vector of the best orientation (3).
         Returns:
             rotation axis, rotation angle, rotational matrix.
         """
-        if np.allclose(bestside[0], np.array([0, 0, -1]), atol=abs(self.VECTOR_TOL)):
-            rotation_axis = [1, 0, 0]
+        if not isinstance(bestside, (list, np.ndarray)) or len(bestside) != 3:
+            print(f"Best side not as excepted: {bestside}, type: {type(bestside)}")
+        if bestside[0] ** 2 + bestside[1] ** 2 + (bestside[2] + 1.) ** 2 < self.VECTOR_TOL:
+            rotation_axis = [1., 0., 0.]
             phi = np.pi
-        elif np.allclose(bestside[0], np.array([0, 0, 1]), atol=abs(self.VECTOR_TOL)):
-            rotation_axis = [1, 0, 0]
-            phi = 0
+        elif bestside[0] ** 2 + bestside[1] ** 2 + (bestside[2] - 1.) ** 2 < self.VECTOR_TOL:
+            rotation_axis = [1., 0., 0.]
+            phi = 0.
         else:
-            phi = np.pi - np.arccos(-bestside[0][2])
-            rotation_axis = [-bestside[0][1], bestside[0][0], 0]  # the z-axis is fixed to 0 for this rotation
-            rotation_axis = [i / np.linalg.norm(rotation_axis) for i in rotation_axis]  # normalization
+            phi = np.pi - np.arccos(-bestside[2] + 0.0)
+            rotation_axis = np.array(
+                [-bestside[1] + 0.0, bestside[0] + 0.0, 0.])  # the z-axis is fixed to 0 for this rotation
+            rotation_axis = rotation_axis / np.linalg.norm(rotation_axis)  # normalization
 
         v = rotation_axis
-        rotational_matrix = np.array([[v[0] * v[0] * (1 - math.cos(phi)) + math.cos(phi),
-                                       v[0] * v[1] * (1 - math.cos(phi)) - v[2] * math.sin(phi),
-                                       v[0] * v[2] * (1 - math.cos(phi)) + v[1] * math.sin(phi)],
-                                      [v[1] * v[0] * (1 - math.cos(phi)) + v[2] * math.sin(phi),
-                                       v[1] * v[1] * (1 - math.cos(phi)) + math.cos(phi),
-                                       v[1] * v[2] * (1 - math.cos(phi)) - v[0] * math.sin(phi)],
-                                      [v[2] * v[0] * (1 - math.cos(phi)) - v[1] * math.sin(phi),
-                                       v[2] * v[1] * (1 - math.cos(phi)) + v[0] * math.sin(phi),
-                                       v[2] * v[2] * (1 - math.cos(phi)) + math.cos(phi)]], dtype=np.float64)
-        # rotational_matrix = np.around(rotational_matrix, decimals=6)
-        sleep(0)  # Yield, so other threads get a bit of breathing space.
-        return rotation_axis, phi, rotational_matrix
+        cos_phi = np.cos(phi)
+        sin_phi = np.sin(phi)
+        rotational_matrix = np.empty((3, 3), dtype=np.float64)
+        rotational_matrix[0, 0] = v[0] * v[0] * (1 - cos_phi) + cos_phi
+        rotational_matrix[0, 1] = v[0] * v[1] * (1 - cos_phi) - v[2] * sin_phi
+        rotational_matrix[0, 2] = v[0] * v[2] * (1 - cos_phi) + v[1] * sin_phi
+        rotational_matrix[1, 0] = v[1] * v[0] * (1 - cos_phi) + v[2] * sin_phi
+        rotational_matrix[1, 1] = v[1] * v[1] * (1 - cos_phi) + cos_phi
+        rotational_matrix[1, 2] = v[1] * v[2] * (1 - cos_phi) - v[0] * sin_phi
+        rotational_matrix[2, 0] = v[2] * v[0] * (1 - cos_phi) - v[1] * sin_phi
+        rotational_matrix[2, 1] = v[2] * v[1] * (1 - cos_phi) + v[0] * sin_phi
+        rotational_matrix[2, 2] = v[2] * v[2] * (1 - cos_phi) + cos_phi
+
+        return [list(rotation_axis), phi, rotational_matrix]
+
+    def __str__(self):
+        response = "Result-stats:"
+        response += "\n  Tweaked Z-axis: \t{}".format(self.alignment)
+        response += "\n  Rotation Axis: {}, angle: {}".format(self.rotation_axis, self.rotation_angle)
+        response += """\n  Rotation matrix: 
+    {:2f}\t{:2f}\t{:2f}
+    {:2f}\t{:2f}\t{:2f}
+    {:2f}\t{:2f}\t{:2f}""".format(self.matrix[0][0], self.matrix[0][1], self.matrix[0][2],
+                                  self.matrix[1][0], self.matrix[1][1], self.matrix[1][2],
+                                  self.matrix[2][0], self.matrix[2][1], self.matrix[2][2])
+        response += "\n  Printability: \t{}".format(self.printability)
+        return response
