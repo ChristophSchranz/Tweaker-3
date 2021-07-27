@@ -118,7 +118,8 @@ demo object in verbose mode. Use argument -h for help.
     return arguments
 
 
-if __name__ == "__main__":
+def cli():
+    global FileHandler
     # Get the command line arguments. Run in IDE for demo tweaking.
     stime = time()
     try:
@@ -182,3 +183,6 @@ if __name__ == "__main__":
     if args.verbose:
         print("Tweaking took:  \t{:2f} s".format(time() - stime))
         print("Successfully Rotated!")
+
+if __name__ == "__main__":
+    cli()
