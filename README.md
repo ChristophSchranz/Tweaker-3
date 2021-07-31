@@ -10,10 +10,9 @@ Author: Christoph Schranz, 12.01.2016
 
 `python Tweaker.py -i demo_object.stl -vb`
 
-If you want to install is as a CLI app first install
-[pipx](https://pypa.github.io/pipx/) and then run
+If you want to install this module as a CLI package install it via `pip`:
 
-    pipx install git+https://github.com/ChristophSchranz/Tweaker-3.git
+    pip install git+https://github.com/ChristophSchranz/Tweaker-3.git
 
 ### Extended mode:
 
