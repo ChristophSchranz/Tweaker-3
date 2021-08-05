@@ -503,10 +503,10 @@ class Tweak:
         """
         if not isinstance(bestside, (list, np.ndarray)) or len(bestside) != 3:
             print(f"Best side not as excepted: {bestside}, type: {type(bestside)}")
-        if bestside[0] ** 2 + bestside[1] ** 2 + (bestside[2] + 1.) ** 2 < self.VECTOR_TOL:
+        if bestside[0] ** 2 + bestside[1] ** 2 + (bestside[2] + 1.) ** 2 < abs(self.VECTOR_TOL):
             rotation_axis = [1., 0., 0.]
             phi = np.pi
-        elif bestside[0] ** 2 + bestside[1] ** 2 + (bestside[2] - 1.) ** 2 < self.VECTOR_TOL:
+        elif bestside[0] ** 2 + bestside[1] ** 2 + (bestside[2] - 1.) ** 2 < abs(self.VECTOR_TOL):
             rotation_axis = [1., 0., 0.]
             phi = 0.
         else:
