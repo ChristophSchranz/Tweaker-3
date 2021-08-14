@@ -56,16 +56,17 @@ You can choose the output types "asciistl" and
 `python Tweaker.py -i demo_object.stl -x -p`
 
 
-### Designer Mode:
 
-In some cases the smoothness of one side's surface 
-may be more important. Therefore, orientations closer than 
-45 degrees to a vector can be weighted. The use of the 
-extended mode -x is also recommended. Here is an example 
-of how to favour the side x,y,z=0,-1,2.5 with a weighting factor 
-of 3:
+### Favour Side:
 
-`python Tweaker.py -i demo_object.stl -vb -x -fs "[[0,-1,2.5],3]"`
+In some cases the surface of one side of an object  
+may be more important than those of the others. 
+Therefore, a selected orientation (and all close ones in terms of a small scalar product) 
+can be weighted by using the flag `--favside (fs)` Here is an example 
+of how to favour facets in the direction `x=1, y=-1.0, z=2.5` with a weighting factor 
+of `3.0`:
+
+`python Tweaker.py -i demo_object.stl -vb -x -fs "[[0,-1,2.5],3.0]"`
 
 
 ### Find Help:
@@ -77,26 +78,47 @@ of 3:
 `python Tweaker.py -v`
 
 
-## Plugins:
+## Further Repos:
 
-### Cura 15
+### Previous Version
 
-There is a plugin for Cura 15.04 in the directory `AutoRotate Plugin/Cura15_04`. This version of Cura, however, is outdated and later versions are recommended.
+The Tweaker's initial repository is here:
 
-### Cura 2, 3 and 4
+<a href="https://github.com/iot-salzburg/STL-tweaker">
+  <img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=iot-salzburg&repo=STL-Tweaker&theme=slateorange" />
+</a>
 
-In recent versions of Cura, the **Tweaker-3** is available as **Auto-Orientation** - plugin in the *Marketplace* (Cura >= 4) respectively the *plugin manager*. The plugin's source can be found [here](https://github.com/nallath/CuraOrientationPlugin).
 
-### OctoPrint
+### Ultimaker Cura 2, 3 and 4 - Plugin
 
-The **Tweaker-3** is available as **PrePrint-Service** in OctoPrint and can be installed as described in this 
+The **Tweaker-3** is available in [Cura](https://ultimaker.com/software/ultimaker-cura) 
+as **Auto-Orientation** in the *Marketplace* (Cura >= 4) respectively 
+the *plugin manager*. 
+
+<a href="https://github.com/nallath/CuraOrientationPlugin">
+  <img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=nallath&repo=CuraOrientationPlugin&theme=slateorange" />
+</a>
+
+
+### OctoPrint - Plugin
+
+The **Tweaker-3** is available as **PrePrint-Service** in [OctoPrint](https://octoprint.org/) 
+and can be installed as described in this 
 [instruction](https://plugins.octoprint.org/plugins/preprintservice/). 
 Note that this module combines the auto-rotation functionality with slicing in an external Docker service.
+
+<a href="https://github.com/ChristophSchranz/Octoprint-PrePrintService">
+  <img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=christophschranz&repo=Octoprint-PrePrintService&theme=slateorange" />
+</a>
 
 ### Webservice
 
 Another way to test the functionality of the **Tweaker-3** is the usage of a Docker-based web service
-as described in this [PrePrintService-repository](https://github.com/ChristophSchranz/Pre-Print-Service).
+as described in the repository [PrePrintService](https://github.com/ChristophSchranz/Pre-Print-Service).
+
+<a href="https://github.com/ChristophSchranz/PrePrintService">
+  <img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=christophschranz&repo=Pre-Print-Service&theme=slateorange" />
+</a>
 
 
 ## Interested in how the algorithm works?
