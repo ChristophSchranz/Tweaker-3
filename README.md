@@ -13,6 +13,7 @@ Author: Christoph Schranz, 12.01.2016
 If you want to install this module as a CLI package install it via `pip`:
 
     pip install git+https://github.com/ChristophSchranz/Tweaker-3.git
+    tweaker3 -i demo_object.stl 
 
 ### Extended mode:
 
