@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Christoph"
+  given-names: "Schranz"
+  orcid: "https://orcid.org/0000-0002-5786-7807"
+title: "Tweaker - Auto Rotation Module for FDM 3D Printing"
+version: 3.9
+doi: 10.13140/RG.2.2.27593.36966
+date-released: 2016-12-18
+url: "https://www.researchgate.net/publication/311765131"
+preferred-citation:
+  type: techreport
+  authors:
+- family-names: "Christoph"
+  given-names: "Schranz"
+  orcid: "https://orcid.org/0000-0002-5786-7807"
+title: "Tweaker - Auto Rotation Module for FDM 3D Printing"
+doi: 10.13140/RG.2.2.27593.36966
+institution: "Salzburg Research"
+year: 2016
+month: 12
