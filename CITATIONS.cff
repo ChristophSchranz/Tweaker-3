@@ -1,14 +1,22 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "Lisa"
-  given-names: "Mona"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-- family-names: "Bot"
-  given-names: "Hew"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-title: "My Research Software"
-version: 2.0.4
-doi: 10.5281/zenodo.1234
-date-released: 2017-12-18
-url: "https://github.com/github/linguist"
+- family-names: "Christoph"
+  given-names: "Schranz"
+  orcid: "https://orcid.org/0000-0002-5786-7807"
+title: "Tweaker - Auto Rotation Module for FDM 3D Printing"
+version: 3.9
+doi: 10.13140/RG.2.2.27593.36966
+date-released: 2016-12-18
+url: "https://www.researchgate.net/publication/311765131"
+preferred-citation:
+  type: techreport
+  authors:
+- family-names: "Christoph"
+  given-names: "Schranz"
+  orcid: "https://orcid.org/0000-0002-5786-7807"
+title: "Tweaker - Auto Rotation Module for FDM 3D Printing"
+doi: 10.13140/RG.2.2.27593.36966
+institution: "Salzburg Research"
+year: 2016
+month: 12
