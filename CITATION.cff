@@ -5,10 +5,10 @@ authors:
   given-names: "Schranz"
   orcid: "https://orcid.org/0000-0002-5786-7807"
 title: "Tweaker - Auto Rotation Module for FDM 3D Printing"
-version: v3.9.
+version: v3.9.1
+date-released: 2021-10-14
 url: "https://www.researchgate.net/publication/311765131"
 doi: 10.13140/RG.2.2.27593.36966
 institution: "Salzburg Research"
-date-released: 2016-12-18
 year: 2016
 month: 12
