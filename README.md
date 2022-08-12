@@ -128,14 +128,14 @@ This [Whitepaper](https://www.researchgate.net/publication/311765131_Tweaker_-_A
 declares this program. Additionally, background 
 infos and benchmarks are provided.
 
-## Support
+## Support this project
 
-This project is maintained and improved for many years to provide an effective auto-rotation module for the open-source 3D printing community. 
+This project is maintained and continuously improved to provide an effective auto-rotation module for you and the open-source 3D printing community. 
 Since 2017 all of this was done in my spare time. If it helps you, please support this project now!
 
-Be my [Patreon](https://www.patreon.com/chris_schranz)
+Be my [GitHub-Sponsor](https://github.com/sponsors/ChristophSchranz) or my [Patreon](https://www.patreon.com/chris_schranz)
 
-Or donate a cup of coffee:  
+Or donate a cup of coffee anonymously:  
 [![via Paypal](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RG7UBJMUNLMHN&source=url)
 
 Thank you for supporting this project!
