@@ -1,9 +1,8 @@
 # Tweaker-3
 ## The Tweaker is an auto-rotate module which finds the STL or 3MF object's optimal orientation on the printing platform to improve the efficiency of 3D printing.
 
-![Auto-rotation of a model](https://github.com/ChristophSchranz/Tweaker-3/blob/master/auto-rotation.png)
-Author: Christoph Schranz, 12.01.2016 
-
+![Auto-rotation of a model](https://github.com/ChristophSchranz/Tweaker-3/blob/master/auto-rotation.png)  
+Author: Christoph Schranz, 12.01.2016.  
 [Salzburg Research](http://www.salzburgresearch.at/blog/3d-print-positioning/)
 
 ## Quickstart:  
@@ -128,14 +127,13 @@ This [Whitepaper](https://www.researchgate.net/publication/311765131_Tweaker_-_A
 declares this program. Additionally, background 
 infos and benchmarks are provided.
 
-## Support this project
+## Support this Project
 
-This project is maintained and continuously improved to provide an effective auto-rotation module for you and the open-source 3D printing community. 
-Since 2017 all of this was done in my spare time. If it helps you, please support this project now!
+This project is maintained and continuously improved since 2017 in my spare time to provide an effective auto-rotation module for you and the open-source 3D printing community. 
+If this software helps you, please support this project now!
 
-Be my [GitHub-Sponsor](https://github.com/sponsors/ChristophSchranz) or my [Patreon](https://www.patreon.com/chris_schranz)
-
-Or donate a cup of coffee anonymously:  
+Be my [GitHub-Sponsor](https://github.com/sponsors/ChristophSchranz) or my [Patreon](https://www.patreon.com/chris_schranz) 
+or donate a cup of coffee anonymously: :hatching_chick:	  
 [![via Paypal](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=RG7UBJMUNLMHN&source=url)
 
-Thank you for supporting this project!
+Thank you for supporting this project! :relaxed:	
