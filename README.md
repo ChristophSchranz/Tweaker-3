@@ -7,6 +7,8 @@ Author: Christoph Schranz, 12.01.2016.
 
 ## Quickstart:  
 
+Make sure the required packages are installed using `pip install -r requirements.txt`. 
+
 `python Tweaker.py -i demo_object.stl -vb`
 
 If you want to install this module as a CLI package install it via `pip`:
