@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "Christoph"
-  given-names: "Schranz"
+- family-names: "Schranz"
+  given-names: "Christoph"
   orcid: "https://orcid.org/0000-0002-5786-7807"
 title: "Tweaker - Auto Rotation Module for FDM 3D Printing"
 version: v3.9.1
