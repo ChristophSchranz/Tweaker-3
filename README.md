@@ -84,14 +84,13 @@ of `3.0`:
 
 ### Previous Version
 
-The Tweaker's initial repository is here:
+The Tweaker's initial repository is here: 
 
 <a href="https://github.com/iot-salzburg/STL-tweaker">
   <img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=iot-salzburg&repo=STL-Tweaker&theme=slateorange" />
 </a>
 
-
-### Ultimaker Cura 2, 3 and 4 - Plugin
+### Plugin for Ultimaker Cura
 
 The **Tweaker-3** is available in [Cura](https://ultimaker.com/software/ultimaker-cura) 
 as **Auto-Orientation** in the *Marketplace* (Cura >= 4) respectively 
@@ -102,24 +101,15 @@ the *plugin manager*.
 </a>
 
 
-### OctoPrint - Plugin
+### Plugin for OctoPrint - PrePrintService
 
-The **Tweaker-3** is available as **PrePrint-Service** in [OctoPrint](https://octoprint.org/) 
+The **Tweaker-3** is available as [PrePrint-Service](https://plugins.octoprint.org/plugins/preprintservice/)-Plugin for [OctoPrint](https://octoprint.org/) 
 and can be installed as described in this 
 [instruction](https://plugins.octoprint.org/plugins/preprintservice/). 
-Note that this module combines the auto-rotation functionality with slicing in an external Docker service.
+Note that this module combines the auto-rotation functionality with slicing via [Slic3r](https://slic3r.org/).
 
 <a href="https://github.com/ChristophSchranz/Octoprint-PrePrintService">
   <img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=christophschranz&repo=Octoprint-PrePrintService&theme=slateorange" />
-</a>
-
-### Webservice
-
-Another way to test the functionality of the **Tweaker-3** is the usage of a Docker-based web service
-as described in the repository [PrePrintService](https://github.com/ChristophSchranz/Pre-Print-Service).
-
-<a href="https://github.com/ChristophSchranz/PrePrintService">
-  <img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=christophschranz&repo=Pre-Print-Service&theme=slateorange" />
 </a>
 
 
