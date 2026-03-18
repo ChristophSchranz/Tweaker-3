@@ -11,6 +11,16 @@ Make sure the required packages are installed using `pip install -r requirements
 
 `python Tweaker.py -i demo_object.stl -vb`
 
+### Wildcard input (`-i`)
+
+The `-i` argument accepts a file path or a wildcard pattern (e.g. `connector_V00*.stl`). If the pattern matches multiple files and you do **not** provide `-o`, Tweaker processes each matched input independently and writes a separate output file per input:
+
+- Default tweaking: `<basename>_tweaked.stl`
+- With `-c` (`--convert`): `<basename>_converted.stl`
+
+If you provide `-o` while your wildcard pattern matches multiple input files, Tweaker exits with an error:
+`Option '-o' cannot be used with a wildcard that matches multiple input files.`
+
 If you want to install this module as a CLI package install it via `pip`:
 
     pip install git+https://github.com/ChristophSchranz/Tweaker-3.git
