@@ -4,6 +4,7 @@
 import sys
 import argparse
 import os
+import glob
 from time import time
 
 if __name__ == '__main__':
@@ -22,7 +23,8 @@ __version__ = "3.9, October 2020"
 def getargs():
     parser = argparse.ArgumentParser(description="Orientation tool for better 3D prints")
     parser.add_argument('-i ', action="store",
-                        dest="inputfile", help="select input file")
+                        dest="inputfile",
+                        help="select input file or wildcard pattern, e.g. 'connector_V00*.stl'")
     parser.add_argument('-o ', action="store", dest="outputfile", type=str,
                         help="select output file. '_tweaked' is postfix by default")
     parser.add_argument('-vb ', '--verbose', action="store_true", dest="verbose",
@@ -84,6 +86,10 @@ def getargs():
             filetype = "binarystl"
     arguments.output_type = filetype
     # print("Tweaker, arguments.output_type", arguments.output_type)
+    # Track whether the user explicitly provided an output file via CLI.
+    # This is needed to distinguish it from the automatically generated default.
+    arguments.outputfile_given = bool(arguments.outputfile)
+
     if arguments.outputfile:
         filetype = arguments.outputfile.split(".")[-1].lower()
         if filetype not in ["stl", "3mf", "obj"]:
@@ -104,7 +110,7 @@ def getargs():
 
     argv = sys.argv[1:]
     if len(argv) == 0:
-        print("""No additional arguments. Testing calculation with 
+        print("""No additional arguments. Testing calculation with
 demo object in verbose mode. Use argument -h for help.
 """)
         arguments.convert = False
@@ -121,7 +127,88 @@ demo object in verbose mode. Use argument -h for help.
 def cli():
     global FileHandler
     # Get the command line arguments. Run in IDE for demo tweaking.
-    stime = time()
+
+    def _process_single_file(input_path, args, fh):
+        """Process a single input file using existing Tweaker logic."""
+        stime = time()
+
+        # Determine output type and output file for this specific input
+        filetype = args.output_type if hasattr(args, "output_type") else None
+        if not filetype:
+            if "3mf" in os.path.splitext(input_path)[1]:
+                filetype = "3mf"
+            else:
+                filetype = "binarystl"
+        args.output_type = filetype
+
+        if args.outputfile:
+            # Keep existing behavior for explicitly provided outputfile
+            outputfile = args.outputfile
+        else:
+            if args.convert:
+                outputfile = os.path.splitext(input_path)[0] + "_converted"
+            else:
+                outputfile = os.path.splitext(input_path)[0] + "_tweaked"
+
+            if args.output_type == "3mf":
+                outputfile += ".3mf"  # TODO not supported yet
+            else:
+                outputfile += ".stl"
+
+        try:
+            objs = fh.load_mesh(input_path)
+            if objs is None:
+                sys.exit()
+        except (KeyboardInterrupt, SystemExit):
+            raise SystemExit("Error, loading mesh from file '{}' failed!".format(input_path))
+
+        # Start of tweaking.
+        if args.verbose:
+            print("Calculating the optimal orientation:\n  {}"
+                  .format(input_path.split(os.sep)[-1]))
+
+        info = dict()
+        for part, content in objs.items():
+            mesh = content["mesh"]
+            info[part] = dict()
+            if args.convert:
+                info[part]["matrix"] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+            else:
+                try:
+                    cstime = time()
+                    x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
+                    info[part]["matrix"] = x.matrix
+                    info[part]["tweaker_stats"] = x
+                except (KeyboardInterrupt, SystemExit):
+                    raise SystemExit("\nError, tweaking process for '{}' failed!".format(input_path))
+
+                # List tweaking results
+                if args.result or args.verbose:
+                    print("Result-stats for {}:".format(input_path.split(os.sep)[-1]))
+                    print(" Tweaked Z-axis: \t{}".format(x.alignment))
+                    print(" Axis {}, \tangle: {}".format([float(v) for v in x.rotation_axis], float(x.rotation_angle)))
+                    print(""" Rotation matrix:
+            {:2f}\t{:2f}\t{:2f}
+            {:2f}\t{:2f}\t{:2f}
+            {:2f}\t{:2f}\t{:2f}""".format(x.matrix[0][0], x.matrix[0][1], x.matrix[0][2],
+                                          x.matrix[1][0], x.matrix[1][1], x.matrix[1][2],
+                                          x.matrix[2][0], x.matrix[2][1], x.matrix[2][2]))
+                    print(" Unprintability: \t{}".format(x.unprintability))
+
+                    print("Found result:    \t{:2f} s\n".format(time() - cstime))
+
+        if not args.result:
+            try:
+                fh.write_mesh(objs, info, outputfile, args.output_type)
+            except FileNotFoundError:
+                raise FileNotFoundError("Output File '{}' not found.".format(outputfile))
+
+        # Success message
+        if args.verbose:
+            print("Tweaking '{}' took:  \t{:2f} s".format(input_path.split(os.sep)[-1], time() - stime))
+            print("Successfully Rotated '{}'!".format(input_path.split(os.sep)[-1]))
+
+    stime_total = time()
     try:
         args = getargs()
         if args is None:
@@ -129,60 +216,39 @@ def cli():
     except:
         raise
 
+    # Expand input patterns (e.g. connector_V00*.stl) to a list of files
+    raw_input = args.inputfile
+    wildcard_chars = ["*", "?", "["]
+
+    has_wildcard = any(ch in raw_input for ch in wildcard_chars)
+
+    if has_wildcard:
+        input_files = sorted(glob.glob(raw_input))
+        if not input_files:
+            print("No input files match pattern: {}".format(raw_input))
+            sys.exit(1)
+        # If the input was given as a wildcard pattern and the user did NOT
+        # explicitly provide -o, ignore the automatically generated default
+        # output file so that per-file names are derived from each input_path.
+        if not getattr(args, "outputfile_given", False):
+            args.outputfile = None
+    else:
+        input_files = [raw_input]
+
+    # Disallow a single explicit output file when multiple inputs are given
+    if getattr(args, "outputfile_given", False) and len(input_files) > 1:
+        raise SystemExit("Option '-o' cannot be used with a wildcard that matches multiple input files.")
+
     try:
-        FileHandler = FileHandler.FileHandler()
-        objs = FileHandler.load_mesh(args.inputfile)
-        if objs is None:
-            sys.exit()
-    except(KeyboardInterrupt, SystemExit):
-        raise SystemExit("Error, loading mesh from file failed!")
+        fileHandler = FileHandler.FileHandler()
+    except (KeyboardInterrupt, SystemExit):
+        raise SystemExit("Error, initializing FileHandler failed!")
 
-    # Start of tweaking.
+    for input_path in input_files:
+        _process_single_file(input_path, args, fileHandler)
+
     if args.verbose:
-        print("Calculating the optimal orientation:\n  {}"
-              .format(args.inputfile.split(os.sep)[-1]))
-
-    c = 0
-    info = dict()
-    for part, content in objs.items():
-        mesh = content["mesh"]
-        info[part] = dict()
-        if args.convert:
-            info[part]["matrix"] = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        else:
-            try:
-                cstime = time()
-                x = Tweak(mesh, args.extended_mode, args.verbose, args.show_progress, args.favside, args.volume)
-                info[part]["matrix"] = x.matrix
-                info[part]["tweaker_stats"] = x
-            except (KeyboardInterrupt, SystemExit):
-                raise SystemExit("\nError, tweaking process failed!")
-
-            # List tweaking results
-            if args.result or args.verbose:
-                print("Result-stats:")
-                print(" Tweaked Z-axis: \t{}".format(x.alignment))
-                print(" Axis {}, \tangle: {}".format(x.rotation_axis, x.rotation_angle))
-                print(""" Rotation matrix: 
-            {:2f}\t{:2f}\t{:2f}
-            {:2f}\t{:2f}\t{:2f}
-            {:2f}\t{:2f}\t{:2f}""".format(x.matrix[0][0], x.matrix[0][1], x.matrix[0][2],
-                                          x.matrix[1][0], x.matrix[1][1], x.matrix[1][2],
-                                          x.matrix[2][0], x.matrix[2][1], x.matrix[2][2]))
-                print(" Unprintability: \t{}".format(x.unprintability))
-
-                print("Found result:    \t{:2f} s\n".format(time() - cstime))
-
-    if not args.result:
-        try:
-            FileHandler.write_mesh(objs, info, args.outputfile, args.output_type)
-        except FileNotFoundError:
-            raise FileNotFoundError("Output File '{}' not found.".format(args.outputfile))
-
-    # Success message
-    if args.verbose:
-        print("Tweaking took:  \t{:2f} s".format(time() - stime))
-        print("Successfully Rotated!")
+        print("Total tweaking time:  \t{:2f} s".format(time() - stime_total))
 
 if __name__ == "__main__":
     cli()

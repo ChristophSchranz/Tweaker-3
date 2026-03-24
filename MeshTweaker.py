@@ -534,12 +534,12 @@ class Tweak:
     def __str__(self):
         response = "Result-stats:"
         response += "\n  Tweaked Z-axis: \t{}".format(self.alignment)
-        response += "\n  Rotation Axis: {}, angle: {}".format(self.rotation_axis, self.rotation_angle)
-        response += """\n  Rotation matrix: 
+        response += "\n  Rotation Axis: {}, angle: {}".format([float(v) for v in self.rotation_axis], float(self.rotation_angle))
+        response += """\n  Rotation matrix:
     {:2f}\t{:2f}\t{:2f}
     {:2f}\t{:2f}\t{:2f}
     {:2f}\t{:2f}\t{:2f}""".format(self.matrix[0][0], self.matrix[0][1], self.matrix[0][2],
                                   self.matrix[1][0], self.matrix[1][1], self.matrix[1][2],
                                   self.matrix[2][0], self.matrix[2][1], self.matrix[2][2])
-        response += "\n  Printability: \t{}".format(self.printability)
+        response += "\n  Unprintability: \t{}".format(self.unprintability)
         return response

@@ -16,6 +16,18 @@ If you want to install this module as a CLI package install it via `pip`:
     pip install git+https://github.com/ChristophSchranz/Tweaker-3.git
     tweaker3 -i demo_object.stl 
 
+### Wildcard input (`-i`)
+
+The `-i` argument accepts a file path or a wildcard pattern (e.g. `file_00*.stl`). If the pattern matches multiple files and you do **not** provide `-o`, Tweaker processes each matched input independently and writes a separate output file per input:
+
+- Default tweaking: `<basename>_tweaked.stl`
+- With `-c` (`--convert`): `<basename>_converted.stl`
+
+Please note that you need to use quotes if your filename contains a wildcard, e.g. `python Tweaker.py -i "file_00*.stl" -vb -x`.
+
+If you provide `-o` while your wildcard pattern matches multiple input files, Tweaker exits with an error:
+`Option '-o' cannot be used with a wildcard that matches multiple input files.`
+
 ### Extended mode:
 
 This mode yields the most reliable results, 
