@@ -110,7 +110,7 @@ def getargs():
 
     argv = sys.argv[1:]
     if len(argv) == 0:
-        print("""No additional arguments. Testing calculation with 
+        print("""No additional arguments. Testing calculation with
 demo object in verbose mode. Use argument -h for help.
 """)
         arguments.convert = False
@@ -186,8 +186,8 @@ def cli():
                 if args.result or args.verbose:
                     print("Result-stats for {}:".format(input_path.split(os.sep)[-1]))
                     print(" Tweaked Z-axis: \t{}".format(x.alignment))
-                    print(" Axis {}, \tangle: {}".format(x.rotation_axis, x.rotation_angle))
-                    print(""" Rotation matrix: 
+                    print(" Axis {}, \tangle: {}".format([float(v) for v in x.rotation_axis], float(x.rotation_angle)))
+                    print(""" Rotation matrix:
             {:2f}\t{:2f}\t{:2f}
             {:2f}\t{:2f}\t{:2f}
             {:2f}\t{:2f}\t{:2f}""".format(x.matrix[0][0], x.matrix[0][1], x.matrix[0][2],
@@ -240,12 +240,12 @@ def cli():
         raise SystemExit("Option '-o' cannot be used with a wildcard that matches multiple input files.")
 
     try:
-        FileHandler = FileHandler.FileHandler()
+        fileHandler = FileHandler.FileHandler()
     except (KeyboardInterrupt, SystemExit):
         raise SystemExit("Error, initializing FileHandler failed!")
 
     for input_path in input_files:
-        _process_single_file(input_path, args, FileHandler)
+        _process_single_file(input_path, args, fileHandler)
 
     if args.verbose:
         print("Total tweaking time:  \t{:2f} s".format(time() - stime_total))
